@@ -20,6 +20,7 @@ pub const PAUSED_KEY: soroban_sdk::Symbol = symbol_short!("PAUSED");
 pub const ACTION_SEQ_KEY: soroban_sdk::Symbol = symbol_short!("ACT_SEQ");
 pub const WHITELIST_KEY: soroban_sdk::Symbol = symbol_short!("WHTLIST");
 pub const AUDITORS_KEY: soroban_sdk::Symbol = symbol_short!("AUDITORS");
+pub const COOLDOWN_KEY: soroban_sdk::Symbol = symbol_short!("COOLDOWN");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -40,6 +41,7 @@ pub enum Error {
     ProposalExpired = 13,
     UnauthorizedCaller = 14,
     InvalidParameter = 15,
+    CooldownActive = 16,
 }
 
 #[contracttype]
@@ -116,6 +118,48 @@ impl FreezeGovernance {
         env.storage().instance().set(&ACTION_SEQ_KEY, &0u64);
         env.storage().instance().set(&WHITELIST_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&AUDITORS_KEY, &Vec::<Address>::new(&env));
+        env.storage().instance().set(&COOLDOWN_KEY, &0u64);
+        Ok(())
+    }
+
+    /// Return the active proposal cooldown window in seconds.
+    pub fn get_proposal_cooldown(env: Env) -> u64 {
+        env.storage().instance().get(&COOLDOWN_KEY).unwrap_or(0)
+    }
+
+    /// Set minimum cooldown window in seconds between proposals on the same target. Requires admin.
+    pub fn set_proposal_cooldown(env: Env, caller: Address, seconds: u64) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+        env.storage().instance().set(&COOLDOWN_KEY, &seconds);
+        env.events().publish((symbol_short!("GOV"), symbol_short!("COOLDWN")), seconds);
+        Ok(())
+    }
+
+    /// Retrieve the timestamp of the last proposal initiated for a target address.
+    pub fn get_last_proposal_timestamp(env: Env, target: Address) -> u64 {
+        let key = (symbol_short!("LP_TS"), target);
+        env.storage().temporary().get(&key).unwrap_or(0)
+    }
+
+    fn check_and_update_cooldown(env: &Env, target: &Address) -> Result<(), Error> {
+        let cooldown = Self::get_proposal_cooldown(env.clone());
+        if cooldown > 0 {
+            let last_ts = Self::get_last_proposal_timestamp(env.clone(), target.clone());
+            if last_ts > 0 && env.ledger().timestamp() < last_ts.saturating_add(cooldown) {
+                return Err(Error::CooldownActive);
+            }
+        }
+        let lp_key = (symbol_short!("LP_TS"), target.clone());
+        env.storage().temporary().set(&lp_key, &env.ledger().timestamp());
         Ok(())
     }
 
@@ -548,6 +592,7 @@ impl FreezeGovernance {
         let active_ttl = Self::get_proposal_ttl(env.clone());
 
         if !env.storage().temporary().has(&proposal_key) {
+            Self::check_and_update_cooldown(&env, &target)?;
             let proposal = FreezeProposal {
                 asset_code: asset_code.clone(),
                 issuer: issuer.clone(),
@@ -614,6 +659,7 @@ impl FreezeGovernance {
         let active_ttl = Self::get_proposal_ttl(env.clone());
 
         if !env.storage().temporary().has(&proposal_key) {
+            Self::check_and_update_cooldown(&env, &target)?;
             let proposal = FreezeProposal {
                 asset_code: asset_code.clone(),
                 issuer: issuer.clone(),
@@ -711,18 +757,21 @@ impl FreezeGovernance {
                 }
                 p
             }
-            None => FreezeProposal {
-                asset_code: asset_code.clone(),
-                issuer: issuer.clone(),
-                target: target.clone(),
-                votes: Vec::new(&env),
-                created_ledger: current_ledger,
-                evidence_hash,
-                ttl: active_ttl,
-                negative_votes: Vec::new(&env),
-                created_timestamp: env.ledger().timestamp(),
-                reason_code: 0,
-            },
+            None => {
+                Self::check_and_update_cooldown(&env, &target)?;
+                FreezeProposal {
+                    asset_code: asset_code.clone(),
+                    issuer: issuer.clone(),
+                    target: target.clone(),
+                    votes: Vec::new(&env),
+                    created_ledger: current_ledger,
+                    evidence_hash,
+                    ttl: active_ttl,
+                    negative_votes: Vec::new(&env),
+                    created_timestamp: env.ledger().timestamp(),
+                    reason_code: 0,
+                }
+            }
         };
 
         if proposal.votes.contains(&caller) {
@@ -873,18 +922,21 @@ impl FreezeGovernance {
                 }
                 p
             }
-            None => FreezeProposal {
-                asset_code: asset_code.clone(),
-                issuer: issuer.clone(),
-                target: target.clone(),
-                votes: Vec::new(&env),
-                created_ledger: current_ledger,
-                evidence_hash: String::from_str(&env, ""),
-                ttl: active_ttl,
-                negative_votes: Vec::new(&env),
-                created_timestamp: env.ledger().timestamp(),
-                reason_code: 0,
-            },
+            None => {
+                Self::check_and_update_cooldown(&env, &target)?;
+                FreezeProposal {
+                    asset_code: asset_code.clone(),
+                    issuer: issuer.clone(),
+                    target: target.clone(),
+                    votes: Vec::new(&env),
+                    created_ledger: current_ledger,
+                    evidence_hash: String::from_str(&env, ""),
+                    ttl: active_ttl,
+                    negative_votes: Vec::new(&env),
+                    created_timestamp: env.ledger().timestamp(),
+                    reason_code: 0,
+                }
+            }
         };
 
         if proposal.votes.contains(&caller) {
@@ -2086,5 +2138,50 @@ mod tests {
         assert_eq!(counts2.get(0).unwrap(), 2);
         assert_eq!(counts2.get(1).unwrap(), 2);
         assert_eq!(counts2.get(2).unwrap(), 2);
+    }
+
+    #[test]
+    fn test_proposal_cooldown_anti_spam() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1700000000;
+        });
+
+        let a1 = Address::generate(&env);
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Default cooldown is 0
+        assert_eq!(client.get_proposal_cooldown(), 0);
+
+        // Admin sets cooldown to 3600 seconds (1 hour)
+        client.set_proposal_cooldown(&a1, &3600);
+        assert_eq!(client.get_proposal_cooldown(), 3600);
+
+        let target = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let ast1 = String::from_str(&env, "USDC");
+        let ast2 = String::from_str(&env, "EURC");
+
+        // First proposal succeeds and sets last proposal timestamp
+        client.vote_freeze(&a1, &ast1, &issuer, &target);
+        assert_eq!(client.get_last_proposal_timestamp(&target), 1700000000);
+
+        // Immediate proposal for a different asset on same target is rejected due to cooldown
+        let res = client.try_vote_freeze(&a1, &ast2, &issuer, &target);
+        assert_eq!(res, Err(Ok(Error::CooldownActive)));
+
+        // Advance ledger timestamp beyond cooldown period
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1700003601;
+        });
+
+        // Now proposal succeeds
+        let res2 = client.try_vote_freeze(&a1, &ast2, &issuer, &target);
+        assert!(res2.is_ok());
+        assert_eq!(client.get_last_proposal_timestamp(&target), 1700003601);
     }
 }
