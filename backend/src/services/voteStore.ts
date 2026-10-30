@@ -1,13 +1,13 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import path from "path";
 
 const DB_PATH = process.env.DB_PATH ?? path.join(__dirname, "../../votes.db");
 
-let db: Database.Database;
+let db: DatabaseSync;
 
-export function getDb(): Database.Database {
+export function getDb(): DatabaseSync {
   if (!db) {
-    db = new Database(DB_PATH);
+    db = new DatabaseSync(DB_PATH);
     db.exec(`
       CREATE TABLE IF NOT EXISTS votes (
         vote_key   TEXT NOT NULL,
