@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import StellarSdk from "@stellar/stellar-sdk";
 import { recordVote, clearVotes, listProposals } from "../services/voteStore";
 import { recordAuditLog } from "../services/auditService";
-import { getOnChainVotes } from "../services/sorobanRpc";
+import { getOnChainVotes, isAccountFrozenOnChain } from "../services/sorobanRpc";
 import { sendFreezeProposalNotification } from "../services/fcmService";
 
 export const freezeRouter = Router();
@@ -40,6 +40,41 @@ freezeRouter.get("/proposals", async (_req: Request, res: Response) => {
     })
   );
   res.json(proposals);
+});
+
+freezeRouter.post("/simulate", async (req: Request, res: Response) => {
+  const { assetCode, issuer, target } = req.body;
+  if (!assetCode || !issuer || !target) {
+    return res.status(400).json({ error: "Missing required fields: assetCode, issuer, target" });
+  }
+
+  if (target === issuer) {
+    return res.status(400).json({
+      valid: false,
+      error: "SelfFreezeNotAllowed",
+      message: "Target account cannot be identical to the asset issuer",
+    });
+  }
+
+  const isFrozen = await isAccountFrozenOnChain(assetCode, target);
+  const onChainVotes = await getOnChainVotes(assetCode, target);
+  const currentVotes = onChainVotes ?? 0;
+  const postVoteCount = currentVotes + 1;
+  const willExecute = postVoteCount >= QUORUM;
+
+  return res.status(200).json({
+    valid: true,
+    assetCode,
+    issuer,
+    target,
+    isAlreadyFrozen: isFrozen ?? false,
+    currentVotes,
+    postVoteCount,
+    quorumThreshold: QUORUM,
+    willExecuteAtQuorum: willExecute,
+    estimatedFeeStroops: "100",
+    estimatedFeeXlm: "0.00001",
+  });
 });
 
 // POST /api/freeze/build
