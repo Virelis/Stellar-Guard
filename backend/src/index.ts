@@ -14,6 +14,7 @@ import { syncRouter } from "./routes/sync";
 import { analyticsRouter } from "./routes/analytics";
 import { capabilitiesRouter } from "./routes/capabilities";
 import { authRouter } from "./routes/auth";
+import { docsRouter } from "./routes/docs";
 import { metricsMiddleware } from "./services/metrics";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
@@ -44,6 +45,7 @@ app.use("/api/sync", syncRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/config", capabilitiesRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/docs", docsRouter);
 
 app.use(errorHandler);
 
