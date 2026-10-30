@@ -22,6 +22,7 @@ pub const WHITELIST_KEY: soroban_sdk::Symbol = symbol_short!("WHTLIST");
 pub const AUDITORS_KEY: soroban_sdk::Symbol = symbol_short!("AUDITORS");
 pub const COOLDOWN_KEY: soroban_sdk::Symbol = symbol_short!("COOLDOWN");
 pub const TIMELOCK_KEY: soroban_sdk::Symbol = symbol_short!("TIMELOCK");
+pub const ADMIN_CHANGE_CNT_KEY: soroban_sdk::Symbol = symbol_short!("ADM_CHG");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -125,7 +126,20 @@ impl FreezeGovernance {
         env.storage().instance().set(&AUDITORS_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&COOLDOWN_KEY, &0u64);
         env.storage().instance().set(&TIMELOCK_KEY, &0u64);
+        env.storage().instance().set(&ADMIN_CHANGE_CNT_KEY, &0u64);
         Ok(())
+    }
+
+    fn increment_admin_change_count(env: &Env) -> u64 {
+        let current: u64 = env.storage().instance().get(&ADMIN_CHANGE_CNT_KEY).unwrap_or(0);
+        let next = current.saturating_add(1);
+        env.storage().instance().set(&ADMIN_CHANGE_CNT_KEY, &next);
+        next
+    }
+
+    /// Return total historical admin rotations (additions and removals).
+    pub fn get_admin_change_count(env: Env) -> u64 {
+        env.storage().instance().get(&ADMIN_CHANGE_CNT_KEY).unwrap_or(0)
     }
 
     /// Return the execution timelock delay in seconds.
@@ -1528,7 +1542,8 @@ impl FreezeGovernance {
         }
         admins.push_back(new_admin.clone());
         env.storage().instance().set(&ADMINS_KEY, &admins);
-        env.events().publish((symbol_short!("ADMIN"), symbol_short!("ADD")), new_admin);
+        let chg_seq = Self::increment_admin_change_count(&env);
+        env.events().publish((symbol_short!("ADMIN"), symbol_short!("ADD")), (caller, new_admin, chg_seq));
         Ok(())
     }
 
@@ -1570,7 +1585,8 @@ impl FreezeGovernance {
 
         admins.remove(idx);
         env.storage().instance().set(&ADMINS_KEY, &admins);
-        env.events().publish((symbol_short!("ADMIN"), symbol_short!("REMOVE")), admin_to_remove);
+        let chg_seq = Self::increment_admin_change_count(&env);
+        env.events().publish((symbol_short!("ADMIN"), symbol_short!("REMOVE")), (caller, admin_to_remove, chg_seq));
         Ok(())
     }
 }
@@ -2459,5 +2475,30 @@ mod tests {
         // a3 votes -> unanimous consensus (3 of 3) -> BYPASSES timelock immediately without waiting!
         client.vote_freeze(&a3, &asset(&env), &issuer, &target);
         assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+    }
+
+    #[test]
+    fn test_admin_change_count_tracking() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        assert_eq!(client.get_admin_change_count(), 0);
+
+        // a1 adds a3 -> count increments to 1
+        client.add_admin(&a1, &a3);
+        assert_eq!(client.get_admin_change_count(), 1);
+
+        // a1 removes a2 -> count increments to 2
+        client.remove_admin(&a1, &a2);
+        assert_eq!(client.get_admin_change_count(), 2);
     }
 }
