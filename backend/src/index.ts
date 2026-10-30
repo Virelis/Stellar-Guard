@@ -20,6 +20,7 @@ import { generalRateLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware } from "./middleware/requestId";
 import { horizonMonitor } from "./services/horizonMonitor";
 import { registerGracefulShutdown } from "./services/shutdown";
+import { scheduler } from "./services/scheduler";
 
 const app = express();
 
@@ -52,6 +53,7 @@ if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`Stellar-Guard backend on :${PORT} (CORS: ${origin})`);
     horizonMonitor.start();
+    scheduler.start();
   });
   registerGracefulShutdown(server);
 }

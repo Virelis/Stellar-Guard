@@ -2,6 +2,7 @@ import http from "http";
 import { logger } from "./logger";
 import { horizonMonitor } from "./horizonMonitor";
 import { getDb } from "./voteStore";
+import { scheduler } from "./scheduler";
 
 export function registerGracefulShutdown(server: http.Server): void {
   let isShuttingDown = false;
@@ -15,6 +16,7 @@ export function registerGracefulShutdown(server: http.Server): void {
     // 1. Stop background Horizon polling and streaming
     try {
       horizonMonitor.stop();
+      scheduler.stop();
       logger.info("[Shutdown] Horizon monitor stopped.");
     } catch (err: any) {
       logger.error("[Shutdown] Error stopping Horizon monitor", err);
