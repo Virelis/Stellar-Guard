@@ -3110,4 +3110,55 @@ mod tests {
         assert_eq!(client.is_account_frozen(&asset(&env), &target), true);
         assert_eq!(client.get_active_proposal_count(), 0);
     }
+
+    #[test]
+    fn test_property_fuzz_proposals() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin_pool = [
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        ];
+
+        client.init(
+            &Vec::from_array(
+                &env,
+                [
+                    admin_pool[0].clone(),
+                    admin_pool[1].clone(),
+                    admin_pool[2].clone(),
+                ],
+            ),
+            &Some(2),
+        );
+        env.mock_all_auths();
+
+        let issuer = Address::generate(&env);
+        let valid_chars = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+        // Generate synthetic asset codes of varying lengths (1 to 12 chars)
+        for len in 1..=12 {
+            let mut s = [0u8; 12];
+            for i in 0..len {
+                s[i] = valid_chars[(i * 7) % valid_chars.len()];
+            }
+            if let Ok(code_str) = core::str::from_utf8(&s[..len]) {
+                let asset_code = String::from_str(&env, code_str);
+                let target = Address::generate(&env);
+
+                // Admin 1 votes
+                let v1 = client.vote_freeze(&admin_pool[0], &asset_code, &issuer, &target);
+                assert_eq!(v1, 1);
+                assert_eq!(client.is_account_frozen(&asset_code, &target), false);
+
+                // Admin 2 votes -> quorum reached
+                let v2 = client.vote_freeze(&admin_pool[1], &asset_code, &issuer, &target);
+                assert_eq!(v2, 2);
+                assert_eq!(client.is_account_frozen(&asset_code, &target), true);
+            }
+        }
+    }
 }
