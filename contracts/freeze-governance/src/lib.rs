@@ -3267,4 +3267,63 @@ mod tests {
         assert_eq!(client.try_set_quorum_percentage(&admins[0], &0), Err(Ok(Error::InvalidParameter)));
         assert_eq!(client.try_set_quorum_percentage(&admins[0], &101), Err(Ok(Error::InvalidParameter)));
     }
+
+    #[test]
+    fn test_e2e_freeze_and_unfreeze_governance_lifecycle() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let proposer = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Register compliance analyst as proposer
+        client.add_proposer(&a1, &proposer);
+        assert_eq!(client.is_proposer(&proposer), true);
+
+        // Proposer submits freeze proposal with evidence and reason code
+        let evidence = String::from_str(&env, "ipfs://bafybeic789...");
+        let uri = String::from_str(&env, "https://jira.corp/browse/INC-101");
+        client.propose_freeze_with_metadata(
+            &proposer,
+            &asset(&env),
+            &issuer,
+            &target,
+            &evidence,
+            &(ReasonCode::CourtOrder as u32),
+            &uri,
+        );
+
+        assert_eq!(client.get_active_proposal_count(), 1);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // Admin 1 votes
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
+
+        // Admin 2 votes -> quorum reached -> account quarantined!
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), true);
+        assert_eq!(client.get_active_proposal_count(), 0);
+
+        // Remediation complete: initiation of unfreeze workflow
+        client.vote_unfreeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), true);
+        assert_eq!(client.get_active_proposal_count(), 1);
+
+        // Admin 3 votes to unfreeze -> unfreeze quorum reached -> account released!
+        client.vote_unfreeze(&a3, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
+        assert_eq!(client.get_active_proposal_count(), 0);
+        assert!(client.get_action_sequence() >= 4);
+    }
 }
