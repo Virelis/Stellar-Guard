@@ -14,6 +14,7 @@ pub const DEFAULT_PROPOSAL_TTL: u32 = 120_960;
 pub const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
 pub const QUORUM_KEY: soroban_sdk::Symbol = symbol_short!("QUORUM");
 pub const TTL_KEY: soroban_sdk::Symbol = symbol_short!("PRP_TTL");
+pub const PROPOSERS_KEY: soroban_sdk::Symbol = symbol_short!("PROPOSRS");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -78,6 +79,7 @@ impl FreezeGovernance {
         env.storage().instance().set(&ADMINS_KEY, &admins);
         env.storage().instance().set(&QUORUM_KEY, &q);
         env.storage().instance().set(&TTL_KEY, &DEFAULT_PROPOSAL_TTL);
+        env.storage().instance().set(&PROPOSERS_KEY, &Vec::<Address>::new(&env));
         Ok(())
     }
 
@@ -126,6 +128,130 @@ impl FreezeGovernance {
             return Err(Error::InvalidQuorum);
         }
         env.storage().instance().set(&QUORUM_KEY, &new_quorum);
+        Ok(())
+    }
+
+    /// Add an authorized proposer (e.g. automated security monitor or compliance investigator).
+    pub fn add_proposer(env: Env, caller: Address, new_proposer: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let mut proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !proposers.contains(&new_proposer) {
+            proposers.push_back(new_proposer);
+            env.storage().instance().set(&PROPOSERS_KEY, &proposers);
+        }
+        Ok(())
+    }
+
+    /// Remove an authorized proposer. Requires admin authorization.
+    pub fn remove_proposer(env: Env, caller: Address, proposer_to_remove: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let mut proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..proposers.len() {
+            if proposers.get(i).unwrap() == proposer_to_remove {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
+
+        if found {
+            proposers.remove(idx);
+            env.storage().instance().set(&PROPOSERS_KEY, &proposers);
+        }
+        Ok(())
+    }
+
+    /// Verify if an address is an authorized proposer.
+    pub fn is_proposer(env: Env, account: Address) -> bool {
+        let proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+        proposers.contains(&account)
+    }
+
+    /// Propose a freeze action without casting an admin vote. Can be called by Admin or Proposer.
+    pub fn propose_freeze(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        issuer: Address,
+        target: Address,
+        evidence_hash: String,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+        let proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !admins.contains(&caller) && !proposers.contains(&caller) {
+            return Err(Error::UnauthorizedCaller);
+        }
+
+        let proposal_key = (symbol_short!("FRZ"), asset_code.clone(), target.clone());
+        let current_ledger = env.ledger().sequence();
+        let active_ttl = Self::get_proposal_ttl(env.clone());
+
+        if !env.storage().temporary().has(&proposal_key) {
+            let proposal = FreezeProposal {
+                asset_code: asset_code.clone(),
+                issuer: issuer.clone(),
+                target: target.clone(),
+                votes: Vec::new(&env),
+                created_ledger: current_ledger,
+                evidence_hash,
+                ttl: active_ttl,
+            };
+            env.storage().temporary().set(&proposal_key, &proposal);
+            env.storage()
+                .temporary()
+                .extend_ttl(&proposal_key, active_ttl, active_ttl);
+            env.events().publish(
+                (symbol_short!("PROPOSE"), asset_code, issuer, target),
+                caller,
+            );
+        }
         Ok(())
     }
 
@@ -458,6 +584,35 @@ mod tests {
         assert_eq!(client.vote_freeze(&a2, &asset(&env), &issuer, &target), 2);
         assert_eq!(client.vote_freeze(&a3, &asset(&env), &issuer, &target), 3);
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
+    }
+
+    #[test]
+    fn test_proposer_rbac() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin = Address::generate(&env);
+        let bot = Address::generate(&env);
+        let stranger = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Stranger cannot propose
+        let err = client.try_propose_freeze(&stranger, &asset(&env), &issuer, &target, &String::from_str(&env, ""));
+        assert_eq!(err, Err(Ok(Error::UnauthorizedCaller)));
+
+        // Admin adds bot as proposer
+        client.add_proposer(&admin, &bot);
+        assert!(client.is_proposer(&bot));
+
+        // Bot can propose
+        client.propose_freeze(&bot, &asset(&env), &issuer, &target, &String::from_str(&env, "aml_alert_101"));
+        assert_eq!(client.get_votes(&asset(&env), &target), 0);
+        assert_eq!(client.get_proposal_evidence(&asset(&env), &target), String::from_str(&env, "aml_alert_101"));
     }
 
     #[test]
