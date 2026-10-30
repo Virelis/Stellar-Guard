@@ -19,6 +19,7 @@ import { metricsMiddleware } from "./services/metrics";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware } from "./middleware/requestId";
+import { tracingMiddleware } from "./middleware/tracing";
 import { horizonMonitor } from "./services/horizonMonitor";
 import { registerGracefulShutdown } from "./services/shutdown";
 import { scheduler } from "./services/scheduler";
@@ -28,6 +29,7 @@ const app = express();
 app.use(corsMiddleware);
 
 app.use(requestIdMiddleware);
+app.use(tracingMiddleware);
 app.use(express.json({ limit: "64kb" }));
 app.use(metricsMiddleware);
 app.use(generalRateLimiter);
