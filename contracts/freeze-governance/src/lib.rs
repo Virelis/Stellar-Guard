@@ -800,6 +800,36 @@ impl FreezeGovernance {
         Ok(results)
     }
 
+    /// Cast freeze votes across multiple asset codes for a target account.
+    /// Enables multi-asset freeze enforcement across a single compromised address.
+    pub fn batch_asset_vote_freeze(
+        env: Env,
+        caller: Address,
+        target: Address,
+        assets: Vec<String>,
+        issuer: Address,
+        evidence_hash: String,
+    ) -> Result<Vec<u32>, Error> {
+        caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
+        let mut results = Vec::new(&env);
+        for i in 0..assets.len() {
+            let asset = assets.get(i).unwrap();
+            let count = Self::internal_vote_freeze(
+                env.clone(),
+                caller.clone(),
+                asset,
+                issuer.clone(),
+                target.clone(),
+                evidence_hash.clone(),
+            )?;
+            results.push_back(count);
+        }
+        Ok(results)
+    }
+
     /// Cast a vote to unfreeze `target`'s `asset_code` balance.
     /// Returns current vote count. Emits UNFREEZE event at quorum.
     pub fn vote_unfreeze(
@@ -2021,5 +2051,40 @@ mod tests {
         client.init(&Vec::from_array(&env, [Address::generate(&env)]), &None);
         let target = Address::generate(&env);
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
+    }
+
+    #[test]
+    fn test_batch_asset_vote_freeze() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+        let a1 = Address::generate(&env);
+        let a2 = Address::generate(&env);
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        let target = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let assets = Vec::from_array(
+            &env,
+            [
+                String::from_str(&env, "USDC"),
+                String::from_str(&env, "EURC"),
+                String::from_str(&env, "BRLC"),
+            ],
+        );
+        let empty_hash = String::from_str(&env, "");
+
+        let counts = client.batch_asset_vote_freeze(&a1, &target, &assets, &issuer, &empty_hash);
+        assert_eq!(counts.len(), 3);
+        assert_eq!(counts.get(0).unwrap(), 1);
+        assert_eq!(counts.get(1).unwrap(), 1);
+        assert_eq!(counts.get(2).unwrap(), 1);
+
+        // a2 votes on same assets
+        let counts2 = client.batch_asset_vote_freeze(&a2, &target, &assets, &issuer, &empty_hash);
+        assert_eq!(counts2.get(0).unwrap(), 2);
+        assert_eq!(counts2.get(1).unwrap(), 2);
+        assert_eq!(counts2.get(2).unwrap(), 2);
     }
 }
