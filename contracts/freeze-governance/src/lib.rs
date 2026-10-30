@@ -60,6 +60,7 @@ pub struct FreezeProposal {
     pub evidence_hash: String,
     pub ttl: u32,
     pub negative_votes: Vec<Address>,
+    pub created_timestamp: u64,
 }
 
 #[contract]
@@ -458,6 +459,7 @@ impl FreezeGovernance {
                 evidence_hash,
                 ttl: active_ttl,
                 negative_votes: Vec::new(&env),
+                created_timestamp: env.ledger().timestamp(),
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -536,6 +538,7 @@ impl FreezeGovernance {
                 evidence_hash,
                 ttl: active_ttl,
                 negative_votes: Vec::new(&env),
+                created_timestamp: env.ledger().timestamp(),
             },
         };
 
@@ -660,6 +663,7 @@ impl FreezeGovernance {
                 evidence_hash: String::from_str(&env, ""),
                 ttl: active_ttl,
                 negative_votes: Vec::new(&env),
+                created_timestamp: env.ledger().timestamp(),
             },
         };
 
@@ -822,6 +826,23 @@ impl FreezeGovernance {
         };
         let proposal_key = (prefix, asset_code, target);
         env.storage().temporary().has(&proposal_key)
+    }
+
+    /// Return the creation timestamp (Unix epoch seconds) of a proposal.
+    pub fn get_proposal_created_timestamp(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> u64 {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        proposal.map(|p| p.created_timestamp).unwrap_or(0)
     }
 
     /// Return the lifecycle status of a proposal (None, Active, Expired).
@@ -1302,6 +1323,27 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_proposal_timestamp() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1700000000;
+        });
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_created_timestamp(&asset(&env), &target, &false), 1700000000);
     }
 
     #[test]
