@@ -75,3 +75,65 @@ export function buildChallengeTx(
     networkPassphrase: NETWORK_PASSPHRASE,
   };
 }
+
+/**
+ * Validates a client-signed SEP-0010 challenge transaction envelope.
+ */
+export function verifyChallengeTx(signedXdr: string): {
+  valid: boolean;
+  clientPublicKey?: string;
+  error?: string;
+} {
+  try {
+    const tx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+    if (!(tx instanceof StellarSdk.Transaction)) {
+      return { valid: false, error: "Fee bump transactions not supported for SEP-0010" };
+    }
+
+    const serverKeypair = getServerKeypair();
+    const serverPublicKey = serverKeypair.publicKey();
+
+    // 1. Source must be server public key
+    if (tx.source !== serverPublicKey) {
+      return { valid: false, error: "Invalid transaction source account" };
+    }
+
+    // 2. Sequence must be 0
+    if (tx.sequence !== "0") {
+      return { valid: false, error: "Challenge sequence must be 0" };
+    }
+
+    // 3. Time bounds check
+    const now = Math.floor(Date.now() / 1000);
+    if (!tx.timeBounds || now < parseInt(tx.timeBounds.minTime, 10) || now > parseInt(tx.timeBounds.maxTime, 10)) {
+      return { valid: false, error: "Challenge transaction has expired" };
+    }
+
+    // 4. Client operation check
+    const op = tx.operations[0];
+    if (!op || op.type !== "manageData" || !op.source) {
+      return { valid: false, error: "Missing client manageData authentication operation" };
+    }
+    const clientPublicKey = op.source;
+
+    // 5. Verify client signature
+    const clientKeypair = StellarSdk.Keypair.fromPublicKey(clientPublicKey);
+    const txHash = tx.hash();
+
+    let clientSigned = false;
+    for (const sig of tx.signatures) {
+      if (clientKeypair.verify(txHash, sig.signature())) {
+        clientSigned = true;
+        break;
+      }
+    }
+
+    if (!clientSigned) {
+      return { valid: false, error: "Missing valid cryptographic signature from client account" };
+    }
+
+    return { valid: true, clientPublicKey };
+  } catch (err: any) {
+    return { valid: false, error: err.message || "Failed to decode or verify challenge transaction" };
+  }
+}

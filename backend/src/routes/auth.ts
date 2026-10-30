@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
-import { buildChallengeTx, getServerPublicKey } from "../services/sep10Service";
+import { buildChallengeTx, verifyChallengeTx, getServerPublicKey } from "../services/sep10Service";
+import { signAuthToken } from "../middleware/auth";
 import { isValidEd25519PublicKey } from "../utils/stellarValidator";
 
 export const authRouter = Router();
@@ -31,4 +32,31 @@ authRouter.get("/challenge", (req: Request, res: Response) => {
       details: err.message,
     });
   }
+});
+
+authRouter.post("/token", (req: Request, res: Response) => {
+  const { transaction } = req.body;
+  if (!transaction || typeof transaction !== "string") {
+    res.status(400).json({ error: "Missing required parameter 'transaction' (signed challenge XDR)" });
+    return;
+  }
+
+  const result = verifyChallengeTx(transaction);
+  if (!result.valid || !result.clientPublicKey) {
+    res.status(400).json({
+      error: "Challenge verification failed",
+      details: result.error,
+    });
+    return;
+  }
+
+  const token = signAuthToken(result.clientPublicKey, "admin", 86400);
+
+  res.status(200).json({
+    success: true,
+    token,
+    clientPublicKey: result.clientPublicKey,
+    tokenType: "Bearer",
+    expiresIn: 86400,
+  });
 });
