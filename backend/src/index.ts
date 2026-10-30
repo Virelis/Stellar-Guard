@@ -8,6 +8,7 @@ import { eventsRouter } from "./routes/events";
 import { xdrRouter } from "./routes/xdr";
 import { auditRouter } from "./routes/audit";
 import { webhooksRouter } from "./routes/webhooks";
+import { networkRouter } from "./routes/network";
 import { metricsMiddleware } from "./services/metrics";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
@@ -31,6 +32,7 @@ app.use("/api/events", eventsRouter);
 app.use("/api/xdr", xdrRouter);
 app.use("/api/audit", auditRouter);
 app.use("/api/webhooks", webhooksRouter);
+app.use("/api/network", networkRouter);
 
 app.use(errorHandler);
 
