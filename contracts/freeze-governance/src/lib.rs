@@ -715,6 +715,22 @@ impl FreezeGovernance {
         proposal.map(|p| p.votes.len()).unwrap_or(0)
     }
 
+    /// Check if an active or unpruned proposal exists in temporary storage.
+    pub fn has_proposal(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> bool {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        env.storage().temporary().has(&proposal_key)
+    }
+
     /// Return the lifecycle status of a proposal (None, Active, Expired).
     pub fn get_proposal_status(
         env: Env,
@@ -1193,6 +1209,24 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_has_proposal() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), false);
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), true);
     }
 
     #[test]
