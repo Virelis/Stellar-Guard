@@ -95,6 +95,23 @@ impl FreezeGovernance {
         Ok(())
     }
 
+    /// Validate asset code adheres to Stellar standard specifications (1-12 alphanumeric characters).
+    fn validate_asset_code(asset_code: &String) -> Result<(), Error> {
+        let len = asset_code.len();
+        if len == 0 || len > 12 {
+            return Err(Error::InvalidAssetCode);
+        }
+        let mut buf = [0u8; 12];
+        let slice = &mut buf[..len as usize];
+        asset_code.copy_into_slice(slice);
+        for &b in slice.iter() {
+            if !b.is_ascii_alphanumeric() {
+                return Err(Error::InvalidAssetCode);
+            }
+        }
+        Ok(())
+    }
+
     /// Check whether contract governance operations are paused.
     pub fn is_paused(env: Env) -> bool {
         env.storage().instance().get(&PAUSED_KEY).unwrap_or(false)
@@ -290,6 +307,7 @@ impl FreezeGovernance {
         if Self::is_paused(env.clone()) {
             return Err(Error::ContractPaused);
         }
+        Self::validate_asset_code(&asset_code)?;
 
         let admins: Vec<Address> = env
             .storage()
@@ -357,6 +375,7 @@ impl FreezeGovernance {
         if Self::is_paused(env.clone()) {
             return Err(Error::ContractPaused);
         }
+        Self::validate_asset_code(&asset_code)?;
         let admins: Vec<Address> = env
             .storage()
             .instance()
@@ -475,6 +494,7 @@ impl FreezeGovernance {
         if Self::is_paused(env.clone()) {
             return Err(Error::ContractPaused);
         }
+        Self::validate_asset_code(&asset_code)?;
 
         let admins: Vec<Address> = env
             .storage()
@@ -1132,6 +1152,35 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_invalid_asset_code() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Empty asset code is rejected
+        let empty_code = String::from_str(&env, "");
+        let err1 = client.try_vote_freeze(&a1, &empty_code, &issuer, &target);
+        assert_eq!(err1, Err(Ok(Error::InvalidAssetCode)));
+
+        // Asset code longer than 12 chars is rejected
+        let long_code = String::from_str(&env, "VERYLONGRWAUSD123");
+        let err2 = client.try_vote_freeze(&a1, &long_code, &issuer, &target);
+        assert_eq!(err2, Err(Ok(Error::InvalidAssetCode)));
+
+        // Non-alphanumeric code is rejected
+        let invalid_chars = String::from_str(&env, "USD$");
+        let err3 = client.try_vote_freeze(&a1, &invalid_chars, &issuer, &target);
+        assert_eq!(err3, Err(Ok(Error::InvalidAssetCode)));
     }
 
     #[test]
