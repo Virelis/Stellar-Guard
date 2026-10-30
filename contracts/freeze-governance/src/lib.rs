@@ -17,6 +17,7 @@ pub const TTL_KEY: soroban_sdk::Symbol = symbol_short!("PRP_TTL");
 pub const PROPOSERS_KEY: soroban_sdk::Symbol = symbol_short!("PROPOSRS");
 pub const PAUSED_KEY: soroban_sdk::Symbol = symbol_short!("PAUSED");
 pub const ACTION_SEQ_KEY: soroban_sdk::Symbol = symbol_short!("ACT_SEQ");
+pub const WHITELIST_KEY: soroban_sdk::Symbol = symbol_short!("WHTLIST");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -97,6 +98,7 @@ impl FreezeGovernance {
         env.storage().instance().set(&PROPOSERS_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&PAUSED_KEY, &false);
         env.storage().instance().set(&ACTION_SEQ_KEY, &0u64);
+        env.storage().instance().set(&WHITELIST_KEY, &Vec::<Address>::new(&env));
         Ok(())
     }
 
@@ -188,6 +190,88 @@ impl FreezeGovernance {
 
         env.deployer().update_current_contract_wasm(new_wasm_hash.clone());
         env.events().publish((symbol_short!("CONTRACT"), symbol_short!("UPGRADE")), new_wasm_hash);
+        Ok(())
+    }
+
+    /// Return the list of whitelisted addresses immune from freeze actions.
+    pub fn get_whitelist(env: Env) -> Vec<Address> {
+        env.storage()
+            .instance()
+            .get(&WHITELIST_KEY)
+            .unwrap_or(Vec::new(&env))
+    }
+
+    /// Check if an account is whitelisted.
+    pub fn is_whitelisted(env: Env, account: Address) -> bool {
+        let list: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&WHITELIST_KEY)
+            .unwrap_or(Vec::new(&env));
+        list.contains(&account)
+    }
+
+    /// Add an infrastructure or custodian address to the whitelist. Requires admin.
+    pub fn add_whitelist(env: Env, caller: Address, account: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let mut list: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&WHITELIST_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !list.contains(&account) {
+            list.push_back(account.clone());
+            env.storage().instance().set(&WHITELIST_KEY, &list);
+            env.events().publish((symbol_short!("WHTLIST"), symbol_short!("ADD")), account);
+        }
+        Ok(())
+    }
+
+    /// Remove an address from the whitelist. Requires admin.
+    pub fn remove_whitelist(env: Env, caller: Address, account: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let mut list: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&WHITELIST_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..list.len() {
+            if list.get(i).unwrap() == account {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
+
+        if found {
+            list.remove(idx);
+            env.storage().instance().set(&WHITELIST_KEY, &list);
+            env.events().publish((symbol_short!("WHTLIST"), symbol_short!("REMOVE")), account);
+        }
         Ok(())
     }
 
@@ -341,6 +425,9 @@ impl FreezeGovernance {
         if target == issuer {
             return Err(Error::SelfFreezeNotAllowed);
         }
+        if Self::is_whitelisted(env.clone(), target.clone()) {
+            return Err(Error::InvalidParameter);
+        }
 
         let admins: Vec<Address> = env
             .storage()
@@ -411,6 +498,9 @@ impl FreezeGovernance {
         Self::validate_asset_code(&asset_code)?;
         if target == issuer {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if Self::is_whitelisted(env.clone(), target.clone()) {
+            return Err(Error::InvalidParameter);
         }
         let admins: Vec<Address> = env
             .storage()
@@ -534,6 +624,9 @@ impl FreezeGovernance {
         Self::validate_asset_code(&asset_code)?;
         if target == issuer {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if Self::is_whitelisted(env.clone(), target.clone()) {
+            return Err(Error::InvalidParameter);
         }
 
         let admins: Vec<Address> = env
@@ -1209,6 +1302,37 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_whitelist_exemption_registry() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let pool = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        assert_eq!(client.is_whitelisted(&pool), false);
+
+        // Add pool to whitelist
+        client.add_whitelist(&admin, &pool);
+        assert_eq!(client.is_whitelisted(&pool), true);
+        assert_eq!(client.get_whitelist().len(), 1);
+
+        // Attempting to freeze whitelisted address fails with InvalidParameter
+        let res = client.try_vote_freeze(&admin, &asset(&env), &issuer, &pool);
+        assert_eq!(res, Err(Ok(Error::InvalidParameter)));
+
+        // Remove from whitelist restores freezability
+        client.remove_whitelist(&admin, &pool);
+        assert_eq!(client.is_whitelisted(&pool), false);
+        let vote_res = client.vote_freeze(&admin, &asset(&env), &issuer, &pool);
+        assert_eq!(vote_res, 1);
     }
 
     #[test]
