@@ -308,6 +308,9 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
+        if target == issuer {
+            return Err(Error::SelfFreezeNotAllowed);
+        }
 
         let admins: Vec<Address> = env
             .storage()
@@ -376,6 +379,9 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
+        if target == issuer {
+            return Err(Error::SelfFreezeNotAllowed);
+        }
         let admins: Vec<Address> = env
             .storage()
             .instance()
@@ -495,6 +501,9 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
+        if target == issuer {
+            return Err(Error::SelfFreezeNotAllowed);
+        }
 
         let admins: Vec<Address> = env
             .storage()
@@ -1152,6 +1161,23 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_self_freeze_protection() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Target == issuer must be rejected
+        let res = client.try_vote_freeze(&a1, &asset(&env), &issuer, &issuer);
+        assert_eq!(res, Err(Ok(Error::SelfFreezeNotAllowed)));
     }
 
     #[test]
