@@ -3687,4 +3687,58 @@ mod tests {
         }
         assert!(matched_topics);
     }
+
+    #[test]
+    fn test_invariant_voter_count_bounded_by_admin_set() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3, a4) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let non_admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone(), a4.clone()]), &Some(3));
+        env.mock_all_auths();
+
+        // 1. First vote cast
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        let voters = client.get_proposal_voters(&asset(&env), &target, &false);
+        let admins = client.get_admins();
+        assert!(voters.len() <= admins.len());
+        assert_eq!(voters.len(), 1);
+
+        // 2. Duplicate vote attempt should fail and not increase count
+        let dup = client.try_vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(dup, Err(Ok(Error::AlreadyVoted)));
+        let voters = client.get_proposal_voters(&asset(&env), &target, &false);
+        assert!(voters.len() <= admins.len());
+        assert_eq!(voters.len(), 1);
+
+        // 3. Unauthorized vote attempt should fail and not increase count
+        let unauth = client.try_vote_freeze(&non_admin, &asset(&env), &issuer, &target);
+        assert_eq!(unauth, Err(Ok(Error::UnauthorizedFreezeAttempt)));
+        let voters = client.get_proposal_voters(&asset(&env), &target, &false);
+        assert!(voters.len() <= admins.len());
+        assert_eq!(voters.len(), 1);
+
+        // 4. Second valid vote cast
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        let voters = client.get_proposal_voters(&asset(&env), &target, &false);
+        assert!(voters.len() <= admins.len());
+        assert_eq!(voters.len(), 2);
+
+        // 5. Admin removed: check invariant still holds
+        client.remove_admin(&a1, &a4);
+        let admins = client.get_admins();
+        assert_eq!(admins.len(), 3);
+        let voters = client.get_proposal_voters(&asset(&env), &target, &false);
+        assert!(voters.len() <= admins.len());
+    }
 }
