@@ -3741,4 +3741,38 @@ mod tests {
         let voters = client.get_proposal_voters(&asset(&env), &target, &false);
         assert!(voters.len() <= admins.len());
     }
+
+    #[test]
+    fn test_invariant_quorum_guarded_against_underflow() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // 1. Quorum cannot be set to 0
+        let zero_q = client.try_set_quorum(&a1, &0);
+        assert_eq!(zero_q, Err(Ok(Error::InvalidQuorum)));
+
+        // 2. Quorum cannot exceed admin count (e.g. 4 > 3)
+        let high_q = client.try_set_quorum(&a1, &4);
+        assert_eq!(high_q, Err(Ok(Error::InvalidQuorum)));
+
+        // 3. Admin removal is permitted when remaining admins >= quorum
+        let rem_a3 = client.try_remove_admin(&a1, &a3);
+        assert!(rem_a3.is_ok());
+        assert_eq!(client.get_admins().len(), 2);
+
+        // 4. Invariant: Further admin removal that would drop active admins < quorum MUST be blocked
+        let rem_a2_blocked = client.try_remove_admin(&a1, &a2);
+        assert_eq!(rem_a2_blocked, Err(Ok(Error::BelowQuorumThreshold)));
+        assert_eq!(client.get_admins().len(), 2);
+    }
 }
