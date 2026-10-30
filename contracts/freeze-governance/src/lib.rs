@@ -24,6 +24,7 @@ pub const COOLDOWN_KEY: soroban_sdk::Symbol = symbol_short!("COOLDOWN");
 pub const TIMELOCK_KEY: soroban_sdk::Symbol = symbol_short!("TIMELOCK");
 pub const ADMIN_CHANGE_CNT_KEY: soroban_sdk::Symbol = symbol_short!("ADM_CHG");
 pub const ACTIVE_PROPOSALS_KEY: soroban_sdk::Symbol = symbol_short!("ACT_PRP");
+pub const FROZEN_REGISTRY_KEY: soroban_sdk::Symbol = symbol_short!("FRZ_REG");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -130,7 +131,87 @@ impl FreezeGovernance {
         env.storage().instance().set(&TIMELOCK_KEY, &0u64);
         env.storage().instance().set(&ADMIN_CHANGE_CNT_KEY, &0u64);
         env.storage().instance().set(&ACTIVE_PROPOSALS_KEY, &Vec::<(String, Address, bool)>::new(&env));
+        env.storage().instance().set(&FROZEN_REGISTRY_KEY, &Vec::<(String, Address)>::new(&env));
         Ok(())
+    }
+
+    fn mark_account_frozen(env: &Env, asset_code: &String, target: &Address) {
+        let mut list: Vec<(String, Address)> = env
+            .storage()
+            .instance()
+            .get(&FROZEN_REGISTRY_KEY)
+            .unwrap_or(Vec::new(env));
+        let item = (asset_code.clone(), target.clone());
+        if !list.contains(&item) {
+            list.push_back(item);
+            env.storage().instance().set(&FROZEN_REGISTRY_KEY, &list);
+        }
+    }
+
+    fn mark_account_unfrozen(env: &Env, asset_code: &String, target: &Address) {
+        let mut list: Vec<(String, Address)> = env
+            .storage()
+            .instance()
+            .get(&FROZEN_REGISTRY_KEY)
+            .unwrap_or(Vec::new(env));
+        let item = (asset_code.clone(), target.clone());
+        let mut idx = 0u32;
+        let mut found = false;
+        for i in 0..list.len() {
+            if list.get(i).unwrap() == item {
+                idx = i;
+                found = true;
+                break;
+            }
+        }
+        if found {
+            list.remove(idx);
+            env.storage().instance().set(&FROZEN_REGISTRY_KEY, &list);
+        }
+    }
+
+    /// Check if a specific account is currently registered as frozen for an asset.
+    pub fn is_account_frozen(env: Env, asset_code: String, target: Address) -> bool {
+        let list: Vec<(String, Address)> = env
+            .storage()
+            .instance()
+            .get(&FROZEN_REGISTRY_KEY)
+            .unwrap_or(Vec::new(&env));
+        let item = (asset_code, target);
+        list.contains(&item)
+    }
+
+    /// Return total number of accounts currently registered as frozen.
+    pub fn get_frozen_accounts_count(env: Env) -> u32 {
+        let list: Vec<(String, Address)> = env
+            .storage()
+            .instance()
+            .get(&FROZEN_REGISTRY_KEY)
+            .unwrap_or(Vec::new(&env));
+        list.len()
+    }
+
+    /// Return paginated list of registered frozen accounts (asset_code, target).
+    pub fn get_frozen_accounts(
+        env: Env,
+        start_index: u32,
+        limit: u32,
+    ) -> Vec<(String, Address)> {
+        let list: Vec<(String, Address)> = env
+            .storage()
+            .instance()
+            .get(&FROZEN_REGISTRY_KEY)
+            .unwrap_or(Vec::new(&env));
+        let mut result = Vec::new(&env);
+        let total = list.len();
+        if start_index >= total || limit == 0 {
+            return result;
+        }
+        let end = (start_index.saturating_add(limit)).min(total);
+        for i in start_index..end {
+            result.push_back(list.get(i).unwrap());
+        }
+        result
     }
 
     fn add_active_proposal_key(env: &Env, asset_code: &String, target: &Address, is_unfreeze: bool) {
@@ -1002,6 +1083,7 @@ impl FreezeGovernance {
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, false);
+                Self::mark_account_frozen(&env, &asset_code, &target);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1016,6 +1098,7 @@ impl FreezeGovernance {
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, false);
+                Self::mark_account_frozen(&env, &asset_code, &target);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1194,6 +1277,7 @@ impl FreezeGovernance {
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, true);
+                Self::mark_account_unfrozen(&env, &asset_code, &target);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1208,6 +1292,7 @@ impl FreezeGovernance {
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, true);
+                Self::mark_account_unfrozen(&env, &asset_code, &target);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1518,6 +1603,7 @@ impl FreezeGovernance {
         );
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, false);
+        Self::mark_account_frozen(&env, &asset_code, &target);
         Ok(())
     }
 
@@ -1553,6 +1639,7 @@ impl FreezeGovernance {
         );
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, true);
+        Self::mark_account_unfrozen(&env, &asset_code, &target);
         Ok(())
     }
 
@@ -2804,5 +2891,49 @@ mod tests {
         let remaining = client.get_active_proposals(&0, &10);
         assert_eq!(remaining.len(), 1);
         assert_eq!(remaining.get(0).unwrap().1, t2);
+    }
+
+    #[test]
+    fn test_frozen_asset_registry() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        assert_eq!(client.get_frozen_accounts_count(), 0);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
+
+        // a1 votes (1 of 2) -> not yet frozen
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
+
+        // a2 votes -> reaches quorum -> marked frozen in registry!
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), true);
+        assert_eq!(client.get_frozen_accounts_count(), 1);
+
+        let list = client.get_frozen_accounts(&0, &10);
+        assert_eq!(list.len(), 1);
+        assert_eq!(list.get(0).unwrap().1, target);
+
+        // Advance cooldown timestamp to allow unfreeze proposal
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1000;
+        });
+
+        // Now initiate unfreeze flow: a1 votes
+        client.vote_unfreeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), true);
+
+        // a2 votes -> unfreeze executed -> removed from registry!
+        client.vote_unfreeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
+        assert_eq!(client.get_frozen_accounts_count(), 0);
     }
 }
