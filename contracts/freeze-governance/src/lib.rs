@@ -3775,4 +3775,53 @@ mod tests {
         assert_eq!(rem_a2_blocked, Err(Ok(Error::BelowQuorumThreshold)));
         assert_eq!(client.get_admins().len(), 2);
     }
+
+    #[test]
+    fn test_proposal_state_machine_full_transition_cycle() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // 1. Initial State: None
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+
+        // Configure a timelock delay of 3600 seconds
+        client.set_timelock_delay(&a1, &3600);
+
+        // 2. Proposal Created with 1st vote -> State: Active
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // 3. Quorum met (2 of 3) with timelock delay -> State: Queued
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Queued);
+
+        // Execution before timelock matures fails
+        let early_exec = client.try_execute_freeze(&a1, &asset(&env), &target);
+        assert_eq!(early_exec, Err(Ok(Error::TimelockActive)));
+
+        // Advance ledger timestamp past timelock
+        let tml = client.get_proposal_timelock_until(&asset(&env), &target, &false);
+        assert!(tml > 0);
+        env.ledger().with_mut(|li| {
+            li.timestamp = tml + 10;
+        });
+
+        // 4. Timelock matured: Execute proposal -> State: None (executed and removed)
+        let exec_ok = client.try_execute_freeze(&a1, &asset(&env), &target);
+        assert!(exec_ok.is_ok());
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert!(client.is_account_frozen(&asset(&env), &target));
+    }
 }
