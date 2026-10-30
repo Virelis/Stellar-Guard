@@ -3874,4 +3874,48 @@ mod tests {
         assert_eq!(client.is_auditor(&auditor), false);
         assert_eq!(client.get_auditors().len(), 0);
     }
+
+    #[test]
+    fn test_whitelist_exemption_guard_all_entrypoints() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let whitelisted_account = Address::generate(&env);
+        let issuer = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Add account to critical infrastructure whitelist
+        client.add_whitelist(&a1, &whitelisted_account);
+        assert!(client.is_whitelisted(&whitelisted_account));
+
+        let empty_str = String::from_str(&env, "");
+
+        // 1. propose_freeze
+        let p1 = client.try_propose_freeze(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str);
+        assert_eq!(p1, Err(Ok(Error::InvalidParameter)));
+
+        // 2. propose_freeze_with_category
+        let p2 = client.try_propose_freeze_with_category(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str, &1);
+        assert_eq!(p2, Err(Ok(Error::InvalidParameter)));
+
+        // 3. propose_freeze_with_metadata
+        let p3 = client.try_propose_freeze_with_metadata(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str, &1, &empty_str);
+        assert_eq!(p3, Err(Ok(Error::InvalidParameter)));
+
+        // 4. vote_freeze
+        let p4 = client.try_vote_freeze(&a1, &asset(&env), &issuer, &whitelisted_account);
+        assert_eq!(p4, Err(Ok(Error::InvalidParameter)));
+
+        // 5. vote_freeze_with_evidence
+        let p5 = client.try_vote_freeze_with_evidence(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str);
+        assert_eq!(p5, Err(Ok(Error::InvalidParameter)));
+
+        // 6. vote_unfreeze
+        let p6 = client.try_vote_unfreeze(&a1, &asset(&env), &issuer, &whitelisted_account);
+        assert_eq!(p6, Err(Ok(Error::InvalidParameter)));
+    }
 }
