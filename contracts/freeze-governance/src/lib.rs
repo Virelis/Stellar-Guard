@@ -1482,6 +1482,35 @@ impl FreezeGovernance {
         Ok(())
     }
 
+    /// Batch prune expired proposals to clean up storage state in a single invocation.
+    pub fn prune_expired_batch(
+        env: Env,
+        caller: Address,
+        proposals: Vec<(String, Address, bool)>,
+    ) -> Result<u32, Error> {
+        caller.require_auth();
+        let current_ledger = env.ledger().sequence();
+        let mut pruned_count = 0u32;
+
+        for i in 0..proposals.len() {
+            let (asset_code, target, is_unfreeze) = proposals.get(i).unwrap();
+            let prefix = if is_unfreeze {
+                symbol_short!("UNFRZ")
+            } else {
+                symbol_short!("FRZ")
+            };
+            let proposal_key = (prefix, asset_code.clone(), target.clone());
+            if let Some(proposal) = env.storage().temporary().get::<_, FreezeProposal>(&proposal_key) {
+                if current_ledger > proposal.created_ledger.saturating_add(proposal.ttl) {
+                    env.storage().temporary().remove(&proposal_key);
+                    Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
+                    pruned_count += 1;
+                }
+            }
+        }
+        Ok(pruned_count)
+    }
+
     /// Cancel an unvoted proposal before voting begins. Callable by admin.
     pub fn cancel_proposal(
         env: Env,
@@ -3325,5 +3354,46 @@ mod tests {
         assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
         assert_eq!(client.get_active_proposal_count(), 0);
         assert!(client.get_action_sequence() >= 4);
+    }
+
+    #[test]
+    fn test_prune_expired_batch() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let t1 = Address::generate(&env);
+        let t2 = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Configure short TTL of 100 ledgers
+        client.set_proposal_ttl(&a1, &100);
+
+        client.vote_freeze(&a1, &asset(&env), &issuer, &t1);
+        client.vote_freeze(&a1, &asset(&env), &issuer, &t2);
+        assert_eq!(client.get_active_proposal_count(), 2);
+
+        // Advance ledger beyond proposal TTL
+        env.ledger().with_mut(|li| {
+            li.sequence_number += 200;
+        });
+
+        let to_prune = Vec::from_array(
+            &env,
+            [
+                (asset(&env), t1.clone(), false),
+                (asset(&env), t2.clone(), false),
+            ],
+        );
+
+        let pruned = client.prune_expired_batch(&a1, &to_prune);
+        assert_eq!(pruned, 2);
+        assert_eq!(client.get_active_proposal_count(), 0);
+        assert_eq!(client.has_proposal(&asset(&env), &t1, &false), false);
+        assert_eq!(client.has_proposal(&asset(&env), &t2, &false), false);
     }
 }
