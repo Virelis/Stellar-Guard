@@ -120,6 +120,18 @@ impl FreezeGovernance {
         if admins.len() == 0 {
             return Err(Error::InvalidParameter);
         }
+        let contract_addr = env.current_contract_address();
+        for i in 0..admins.len() {
+            let a = admins.get(i).unwrap();
+            if a == contract_addr {
+                return Err(Error::InvalidParameter);
+            }
+            for j in (i + 1)..admins.len() {
+                if a == admins.get(j).unwrap() {
+                    return Err(Error::InvalidParameter);
+                }
+            }
+        }
         let q = match quorum {
             Some(val) => {
                 if val == 0 || (admins.len() > 0 && val > admins.len()) {
@@ -796,8 +808,11 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
-        if target == issuer {
+        if target == issuer || target == caller {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if target == env.current_contract_address() {
+            return Err(Error::InvalidParameter);
         }
         if Self::is_whitelisted(env.clone(), target.clone()) {
             return Err(Error::InvalidParameter);
@@ -866,8 +881,11 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
-        if target == issuer {
+        if target == issuer || target == caller {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if target == env.current_contract_address() {
+            return Err(Error::InvalidParameter);
         }
         if Self::is_whitelisted(env.clone(), target.clone()) {
             return Err(Error::InvalidParameter);
@@ -937,8 +955,11 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
-        if target == issuer {
+        if target == issuer || target == caller {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if target == env.current_contract_address() {
+            return Err(Error::InvalidParameter);
         }
         if Self::is_whitelisted(env.clone(), target.clone()) {
             return Err(Error::InvalidParameter);
@@ -1034,8 +1055,11 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
-        if target == issuer {
+        if target == issuer || target == caller {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if target == env.current_contract_address() {
+            return Err(Error::InvalidParameter);
         }
         if Self::is_whitelisted(env.clone(), target.clone()) {
             return Err(Error::InvalidParameter);
@@ -1230,8 +1254,11 @@ impl FreezeGovernance {
             return Err(Error::ContractPaused);
         }
         Self::validate_asset_code(&asset_code)?;
-        if target == issuer {
+        if target == issuer || target == caller {
             return Err(Error::SelfFreezeNotAllowed);
+        }
+        if target == env.current_contract_address() {
+            return Err(Error::InvalidParameter);
         }
         if Self::is_whitelisted(env.clone(), target.clone()) {
             return Err(Error::InvalidParameter);
@@ -1880,6 +1907,9 @@ impl FreezeGovernance {
         }
         if admins.contains(&new_admin) {
             return Err(Error::AdminAlreadyExists);
+        }
+        if new_admin == env.current_contract_address() {
+            return Err(Error::InvalidParameter);
         }
         if admins.len() >= MAX_ADMINS {
             return Err(Error::InvalidParameter);
@@ -3006,5 +3036,38 @@ mod tests {
         assert_eq!(info.proposal_cooldown, 60);
         assert_eq!(info.active_proposal_count, 0);
         assert_eq!(info.frozen_accounts_count, 0);
+    }
+
+    #[test]
+    fn test_address_sanity_and_contract_self_freeze_guard() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+
+        // Reject duplicate admin in init
+        let dup_err = client.try_init(&Vec::from_array(&env, [a1.clone(), a1.clone()]), &Some(1));
+        assert_eq!(dup_err, Err(Ok(Error::InvalidParameter)));
+
+        // Reject contract's own address as admin in init
+        let self_admin_err = client.try_init(&Vec::from_array(&env, [cid.clone()]), &Some(1));
+        assert_eq!(self_admin_err, Err(Ok(Error::InvalidParameter)));
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Reject caller attempting to freeze themselves
+        let caller_self_err = client.try_vote_freeze(&a1, &asset(&env), &issuer, &a1);
+        assert_eq!(caller_self_err, Err(Ok(Error::SelfFreezeNotAllowed)));
+
+        // Reject attempting to freeze the governance contract address itself
+        let contract_freeze_err = client.try_vote_freeze(&a1, &asset(&env), &issuer, &cid);
+        assert_eq!(contract_freeze_err, Err(Ok(Error::InvalidParameter)));
+
+        // Reject adding the governance contract address as admin
+        let add_self_admin_err = client.try_add_admin(&a1, &cid);
+        assert_eq!(add_self_admin_err, Err(Ok(Error::InvalidParameter)));
     }
 }
