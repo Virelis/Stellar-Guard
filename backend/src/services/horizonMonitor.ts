@@ -2,6 +2,7 @@ import { Horizon } from "@stellar/stellar-sdk";
 import { logger } from "./logger";
 import { metrics } from "./metrics";
 import { eventBus } from "./eventBus";
+import { cursorStore } from "./cursorStore";
 
 const HORIZON_URL = process.env.HORIZON_URL ?? "https://horizon-testnet.stellar.org";
 let server: Horizon.Server;
@@ -41,6 +42,10 @@ function connectStream() {
   if (!isRunning) return;
 
   try {
+    if (lastCursor === "now") {
+      const persisted = cursorStore.getCursor("payments");
+      if (persisted) lastCursor = persisted;
+    }
     const s = getServer();
     logger.info(`[HorizonMonitor] Connecting to Horizon stream at ${HORIZON_URL} (cursor: ${lastCursor})`);
 
@@ -52,6 +57,7 @@ function connectStream() {
           reconnectAttempts = 0; // reset backoff upon receiving messages
           if (payment.id) {
             lastCursor = payment.id;
+            cursorStore.saveCursor("payments", payment.id);
           }
           if (payment.type !== "payment") return;
 
@@ -126,6 +132,7 @@ function stop() {
     } catch {}
     streamCloseFn = null;
   }
+  cursorStore.flush();
   logger.info("[HorizonMonitor] Stopped stream monitor");
 }
 
