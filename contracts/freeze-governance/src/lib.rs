@@ -57,6 +57,7 @@ pub struct FreezeProposal {
     pub created_ledger: u32,
     pub evidence_hash: String,
     pub ttl: u32,
+    pub negative_votes: Vec<Address>,
 }
 
 #[contract]
@@ -318,6 +319,7 @@ impl FreezeGovernance {
                 created_ledger: current_ledger,
                 evidence_hash,
                 ttl: active_ttl,
+                negative_votes: Vec::new(&env),
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -388,6 +390,7 @@ impl FreezeGovernance {
                 created_ledger: current_ledger,
                 evidence_hash,
                 ttl: active_ttl,
+                negative_votes: Vec::new(&env),
             },
         };
 
@@ -503,6 +506,7 @@ impl FreezeGovernance {
                 created_ledger: current_ledger,
                 evidence_hash: String::from_str(&env, ""),
                 ttl: active_ttl,
+                negative_votes: Vec::new(&env),
             },
         };
 
@@ -689,6 +693,89 @@ impl FreezeGovernance {
         let key = (symbol_short!("UNFRZ"), asset_code, target);
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&key);
         proposal.map(|p| p.votes.len()).unwrap_or(0)
+    }
+
+    /// Cast a negative vote against a proposal.
+    /// If negative votes make achieving quorum mathematically impossible, proposal is rejected.
+    pub fn vote_against(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> Result<u32, Error> {
+        caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
+
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix.clone(), asset_code.clone(), target.clone());
+        let mut proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        if proposal.negative_votes.contains(&caller) {
+            return Err(Error::AlreadyVoted);
+        }
+
+        proposal.negative_votes.push_back(caller.clone());
+        let neg_count = proposal.negative_votes.len();
+        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let max_possible_votes = admins.len().saturating_sub(neg_count);
+
+        env.events().publish(
+            (symbol_short!("VOTE_NO"), prefix.clone(), target.clone()),
+            (caller, neg_count),
+        );
+
+        if max_possible_votes < quorum {
+            env.storage().temporary().remove(&proposal_key);
+            env.events().publish(
+                (symbol_short!("REJECTED"), prefix, target),
+                neg_count,
+            );
+        } else {
+            env.storage().temporary().set(&proposal_key, &proposal);
+            env.storage()
+                .temporary()
+                .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
+        }
+
+        Ok(neg_count)
+    }
+
+    /// Return current negative vote count.
+    pub fn get_negative_votes(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> u32 {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        proposal.map(|p| p.negative_votes.len()).unwrap_or(0)
     }
 
     /// Return the list of addresses that have voted on a proposal.
@@ -1045,6 +1132,39 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_vote_against_rejection() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Initialize proposal with 1 positive vote
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_votes(&asset(&env), &target), 1);
+
+        // a2 votes against -> negative count 1. Max possible positive votes = 3 - 1 = 2 (still >= quorum 2)
+        assert_eq!(client.vote_against(&a2, &asset(&env), &target, &false), 1);
+        assert_eq!(client.get_negative_votes(&asset(&env), &target, &false), 1);
+        assert_eq!(client.get_votes(&asset(&env), &target), 1);
+
+        // a3 votes against -> negative count 2. Max possible positive votes = 3 - 2 = 1 (< quorum 2).
+        // Proposal becomes mathematically impossible to pass and is rejected/removed!
+        client.vote_against(&a3, &asset(&env), &target, &false);
+        assert_eq!(client.get_votes(&asset(&env), &target), 0);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
     }
 
     #[test]
