@@ -3070,4 +3070,44 @@ mod tests {
         let add_self_admin_err = client.try_add_admin(&a1, &cid);
         assert_eq!(add_self_admin_err, Err(Ok(Error::InvalidParameter)));
     }
+
+    #[test]
+    fn test_cpu_gas_metering_benchmark() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3, a4, a5) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(
+            &Vec::from_array(
+                &env,
+                [
+                    a1.clone(),
+                    a2.clone(),
+                    a3.clone(),
+                    a4.clone(),
+                    a5.clone(),
+                ],
+            ),
+            &Some(3),
+        );
+        env.mock_all_auths();
+
+        // Full 3-of-5 admin multisig proposal and voting cycle
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        client.vote_freeze(&a3, &asset(&env), &issuer, &target);
+
+        assert_eq!(client.is_account_frozen(&asset(&env), &target), true);
+        assert_eq!(client.get_active_proposal_count(), 0);
+    }
 }
