@@ -13,6 +13,7 @@ pub const DEFAULT_QUORUM: u32 = 3;
 /// Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
 pub const PROPOSAL_TTL: u32 = 120_960;
 pub const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
+pub const QUORUM_KEY: soroban_sdk::Symbol = symbol_short!("QUORUM");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -49,12 +50,54 @@ pub struct FreezeGovernance;
 
 #[contractimpl]
 impl FreezeGovernance {
-    /// Initialize with a list of authorized admin addresses. One-time call.
-    pub fn init(env: Env, admins: Vec<Address>) -> Result<(), Error> {
+    /// Initialize with a list of authorized admin addresses and optional quorum. One-time call.
+    pub fn init(env: Env, admins: Vec<Address>, quorum: Option<u32>) -> Result<(), Error> {
         if env.storage().instance().has(&ADMINS_KEY) {
             return Err(Error::AlreadyInitialized);
         }
+        let q = match quorum {
+            Some(val) => {
+                if val == 0 || (admins.len() > 0 && val > admins.len()) {
+                    return Err(Error::InvalidQuorum);
+                }
+                val
+            }
+            None => {
+                if admins.len() >= 3 {
+                    3
+                } else if admins.len() > 0 {
+                    admins.len()
+                } else {
+                    DEFAULT_QUORUM
+                }
+            }
+        };
         env.storage().instance().set(&ADMINS_KEY, &admins);
+        env.storage().instance().set(&QUORUM_KEY, &q);
+        Ok(())
+    }
+
+    /// Retrieve active quorum requirement.
+    pub fn get_quorum(env: Env) -> u32 {
+        env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM)
+    }
+
+    /// Update quorum requirement. Requires authorized admin caller.
+    pub fn set_quorum(env: Env, caller: Address, new_quorum: u32) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+        if new_quorum == 0 || new_quorum > admins.len() {
+            return Err(Error::InvalidQuorum);
+        }
+        env.storage().instance().set(&QUORUM_KEY, &new_quorum);
         Ok(())
     }
 
@@ -98,8 +141,9 @@ impl FreezeGovernance {
 
         proposal.votes.push_back(caller);
         let vote_count = proposal.votes.len();
+        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
 
-        if vote_count >= DEFAULT_QUORUM {
+        if vote_count >= quorum {
             // CAP-0077: emit FREEZE event. When freeze_entry host function
             // is stabilised on testnet, replace this with the host call.
             env.events().publish(
@@ -243,15 +287,40 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]));
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(3));
         env.mock_all_auths();
 
+        assert_eq!(client.get_quorum(), 3);
         assert_eq!(client.vote_freeze(&a1, &asset(&env), &issuer, &target), 1);
         assert_eq!(client.vote_freeze(&a2, &asset(&env), &issuer, &target), 2);
         // Third vote reaches quorum — proposal is removed after event
         assert_eq!(client.vote_freeze(&a3, &asset(&env), &issuer, &target), 3);
         // After quorum the proposal is gone
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
+    }
+
+    #[test]
+    fn test_dynamic_quorum_update() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(3));
+        env.mock_all_auths();
+
+        assert_eq!(client.get_quorum(), 3);
+        client.set_quorum(&a1, &2);
+        assert_eq!(client.get_quorum(), 2);
+
+        // Cannot set quorum higher than admin count
+        let err = client.try_set_quorum(&a1, &5);
+        assert_eq!(err, Err(Ok(Error::InvalidQuorum)));
     }
 
     #[test]
@@ -268,7 +337,7 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]));
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(3));
         env.mock_all_auths();
 
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
@@ -287,7 +356,7 @@ mod tests {
 
         let a1 = Address::generate(&env);
         let a2 = Address::generate(&env);
-        client.init(&Vec::from_array(&env, [a1.clone()]));
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
         env.mock_all_auths();
 
         client.add_admin(&a1, &a2);
@@ -305,7 +374,7 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone()]));
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
         env.mock_all_auths();
         let res = client.try_vote_freeze(&stranger, &asset(&env), &issuer, &target);
         assert_eq!(res, Err(Ok(Error::UnauthorizedFreezeAttempt)));
@@ -316,7 +385,7 @@ mod tests {
         let env = Env::default();
         let cid = env.register_contract(None, FreezeGovernance);
         let client = FreezeGovernanceClient::new(&env, &cid);
-        client.init(&Vec::new(&env));
+        client.init(&Vec::new(&env), &None);
         let target = Address::generate(&env);
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
     }
