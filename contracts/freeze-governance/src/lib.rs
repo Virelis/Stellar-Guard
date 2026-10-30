@@ -652,6 +652,11 @@ impl FreezeGovernance {
             return Err(Error::CannotRemoveLastAdmin);
         }
 
+        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        if admins.len().saturating_sub(1) < quorum {
+            return Err(Error::BelowQuorumThreshold);
+        }
+
         let mut found = false;
         let mut idx = 0u32;
         for i in 0..admins.len() {
@@ -934,6 +939,22 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_remove_admin_below_quorum() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let a2 = Address::generate(&env);
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Removing a2 would leave 1 admin, but quorum is 2 -> must be rejected
+        let res = client.try_remove_admin(&a1, &a2);
+        assert_eq!(res, Err(Ok(Error::BelowQuorumThreshold)));
     }
 
     #[test]
