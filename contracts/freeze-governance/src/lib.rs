@@ -265,7 +265,17 @@ impl FreezeGovernance {
         evidence_hash: String,
     ) -> Result<u32, Error> {
         caller.require_auth();
+        Self::internal_vote_freeze(env, caller, asset_code, issuer, target, evidence_hash)
+    }
 
+    fn internal_vote_freeze(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        issuer: Address,
+        target: Address,
+        evidence_hash: String,
+    ) -> Result<u32, Error> {
         let admins: Vec<Address> = env
             .storage()
             .instance()
@@ -337,6 +347,32 @@ impl FreezeGovernance {
     ) -> Result<u32, Error> {
         let empty_evidence = String::from_str(&env, "");
         Self::vote_freeze_with_evidence(env, caller, asset_code, issuer, target, empty_evidence)
+    }
+
+    /// Vote to freeze a batch of target addresses atomically.
+    pub fn batch_vote_freeze(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        issuer: Address,
+        targets: Vec<Address>,
+        evidence_hash: String,
+    ) -> Result<Vec<u32>, Error> {
+        caller.require_auth();
+        let mut results = Vec::new(&env);
+        for i in 0..targets.len() {
+            let target = targets.get(i).unwrap();
+            let count = Self::internal_vote_freeze(
+                env.clone(),
+                caller.clone(),
+                asset_code.clone(),
+                issuer.clone(),
+                target,
+                evidence_hash.clone(),
+            )?;
+            results.push_back(count);
+        }
+        Ok(results)
     }
 
     /// Cast a vote to unfreeze `target`'s `asset_code` balance.
@@ -613,6 +649,29 @@ mod tests {
         client.propose_freeze(&bot, &asset(&env), &issuer, &target, &String::from_str(&env, "aml_alert_101"));
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
         assert_eq!(client.get_proposal_evidence(&asset(&env), &target), String::from_str(&env, "aml_alert_101"));
+    }
+
+    #[test]
+    fn test_batch_vote_freeze() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let t1 = Address::generate(&env);
+        let t2 = Address::generate(&env);
+        let t3 = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        let targets = Vec::from_array(&env, [t1.clone(), t2.clone(), t3.clone()]);
+        let counts = client.batch_vote_freeze(&admin, &asset(&env), &issuer, &targets, &String::from_str(&env, "sybil_ring"));
+        assert_eq!(counts.len(), 3);
+        assert_eq!(counts.get(0).unwrap(), 1);
+        assert_eq!(counts.get(1).unwrap(), 1);
+        assert_eq!(counts.get(2).unwrap(), 1);
     }
 
     #[test]
