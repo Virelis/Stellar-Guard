@@ -3613,4 +3613,49 @@ mod tests {
         assert_eq!(client.vote_freeze(&a2, &asset(&env), &issuer, &target), 2);
         assert!(client.is_account_frozen(&asset(&env), &target));
     }
+
+    #[test]
+    fn test_batch_asset_freeze_stress() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        let asset_names = [
+            "USDC", "EURC", "AUDD", "ARST", "BRLA", "NGNT",
+            "TZS", "KES", "INRC", "STELLARUSD12", "REALESTATE01", "COMMODITYOIL"
+        ];
+        let mut asset_vec = Vec::new(&env);
+        for name in asset_names.iter() {
+            asset_vec.push_back(String::from_str(&env, name));
+        }
+
+        let empty_hash = String::from_str(&env, "");
+
+        // First admin votes across all 12 assets in a single call
+        let first_round = client.batch_asset_vote_freeze(&a1, &target, &asset_vec, &issuer, &empty_hash);
+        assert_eq!(first_round.len(), 12);
+        for i in 0..12 {
+            assert_eq!(first_round.get(i).unwrap(), 1);
+            let code = asset_vec.get(i).unwrap();
+            assert_eq!(client.get_proposal_status(&code, &target, &false), ProposalStatus::Active);
+            assert_eq!(client.is_account_frozen(&code, &target), false);
+        }
+
+        // Second admin completes quorum across all 12 assets
+        let second_round = client.batch_asset_vote_freeze(&a2, &target, &asset_vec, &issuer, &empty_hash);
+        assert_eq!(second_round.len(), 12);
+        for i in 0..12 {
+            assert_eq!(second_round.get(i).unwrap(), 2);
+            let code = asset_vec.get(i).unwrap();
+            assert!(client.is_account_frozen(&code, &target));
+            assert_eq!(client.get_proposal_status(&code, &target, &false), ProposalStatus::None);
+        }
+    }
 }
