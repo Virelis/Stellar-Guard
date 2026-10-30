@@ -721,7 +721,42 @@ impl FreezeGovernance {
             return Err(Error::InvalidQuorum);
         }
         env.storage().instance().set(&QUORUM_KEY, &new_quorum);
+        env.events().publish((symbol_short!("GOV"), symbol_short!("QUORUM")), (caller, new_quorum, admins.len()));
         Ok(())
+    }
+
+    /// Set dynamic quorum as a percentage (1..=100) of active administrators.
+    pub fn set_quorum_percentage(env: Env, caller: Address, percentage: u32) -> Result<u32, Error> {
+        caller.require_auth();
+        if percentage == 0 || percentage > 100 {
+            return Err(Error::InvalidParameter);
+        }
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        // Ceiling division: (len * pct + 99) / 100
+        let calculated = (admins.len().saturating_mul(percentage).saturating_add(99)) / 100;
+        let quorum = calculated.max(1);
+        env.storage().instance().set(&QUORUM_KEY, &quorum);
+        env.events().publish((symbol_short!("GOV"), symbol_short!("QUORUM")), (caller, quorum, admins.len()));
+        Ok(quorum)
+    }
+
+    /// Return current quorum as an approximate integer percentage of active admins.
+    pub fn get_quorum_percentage(env: Env) -> u32 {
+        let admin_count = Self::get_admin_count(env.clone());
+        if admin_count == 0 {
+            return 0;
+        }
+        let quorum = Self::get_quorum(env);
+        (quorum.saturating_mul(100)) / admin_count
     }
 
     /// Add an authorized proposer (e.g. automated security monitor or compliance investigator).
@@ -3184,5 +3219,52 @@ mod tests {
 
         let res_release = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
         assert!(res_release.is_ok());
+    }
+
+    #[test]
+    fn test_quorum_percentage_dynamic_calculation() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admins = [
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        ];
+
+        client.init(
+            &Vec::from_array(
+                &env,
+                [
+                    admins[0].clone(),
+                    admins[1].clone(),
+                    admins[2].clone(),
+                    admins[3].clone(),
+                    admins[4].clone(),
+                ],
+            ),
+            &Some(3),
+        );
+        env.mock_all_auths();
+
+        // 5 admins, default quorum 3 -> (3 * 100) / 5 = 60%
+        assert_eq!(client.get_quorum_percentage(), 60);
+
+        // Set quorum to 67% (two-thirds supermajority): (5 * 67 + 99) / 100 = 434 / 100 = 4
+        let q = client.set_quorum_percentage(&admins[0], &67);
+        assert_eq!(q, 4);
+        assert_eq!(client.get_quorum(), 4);
+
+        // Set quorum to 100% (unanimous): (5 * 100 + 99) / 100 = 5
+        let q100 = client.set_quorum_percentage(&admins[0], &100);
+        assert_eq!(q100, 5);
+        assert_eq!(client.get_quorum(), 5);
+
+        // Invalid percentages rejected
+        assert_eq!(client.try_set_quorum_percentage(&admins[0], &0), Err(Ok(Error::InvalidParameter)));
+        assert_eq!(client.try_set_quorum_percentage(&admins[0], &101), Err(Ok(Error::InvalidParameter)));
     }
 }
