@@ -650,6 +650,35 @@ impl FreezeGovernance {
         proposal.map(|p| p.votes.len()).unwrap_or(0)
     }
 
+    /// Return the list of addresses that have voted on a proposal.
+    pub fn get_proposal_voters(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> Vec<Address> {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        proposal.map(|p| p.votes).unwrap_or(Vec::new(&env))
+    }
+
+    /// Check if a specific admin has already voted on a proposal.
+    pub fn has_voted(
+        env: Env,
+        admin: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> bool {
+        let voters = Self::get_proposal_voters(env, asset_code, target, is_unfreeze);
+        voters.contains(&admin)
+    }
+
     /// Add a new admin. Requires caller to be an existing admin.
     pub fn add_admin(env: Env, caller: Address, new_admin: Address) -> Result<(), Error> {
         caller.require_auth();
@@ -975,6 +1004,30 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_proposal_voter_queries() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        assert_eq!(client.has_voted(&a1, &asset(&env), &target, &false), false);
+
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.has_voted(&a1, &asset(&env), &target, &false), true);
+        assert_eq!(client.has_voted(&a2, &asset(&env), &target, &false), false);
+
+        let voters = client.get_proposal_voters(&asset(&env), &target, &false);
+        assert_eq!(voters.len(), 1);
+        assert_eq!(voters.get(0).unwrap(), a1);
     }
 
     #[test]
