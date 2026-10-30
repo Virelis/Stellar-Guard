@@ -5,6 +5,7 @@ import { transfersRouter } from "./routes/transfers";
 import { freezeRouter } from "./routes/freeze";
 import { healthRouter } from "./routes/health";
 import { metricsMiddleware } from "./services/metrics";
+import { generalRateLimiter } from "./middleware/rateLimiter";
 import { horizonMonitor } from "./services/horizonMonitor";
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(cors({ origin: ALLOWED_ORIGIN, methods: ["GET", "POST", "OPTIONS"] }));
 
 app.use(express.json({ limit: "64kb" }));
 app.use(metricsMiddleware);
+app.use(generalRateLimiter);
 
 app.use(healthRouter);
 app.use("/api/transfers", transfersRouter);
