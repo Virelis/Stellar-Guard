@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import path from "path";
+import { runMigrations } from "./migrator";
 
 const DB_PATH = process.env.DB_PATH ?? path.join(__dirname, "../../votes.db");
 
@@ -8,17 +9,7 @@ let db: DatabaseSync;
 export function getDb(): DatabaseSync {
   if (!db) {
     db = new DatabaseSync(DB_PATH);
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS votes (
-        vote_key   TEXT NOT NULL,
-        asset_code TEXT NOT NULL,
-        issuer     TEXT NOT NULL,
-        target     TEXT NOT NULL,
-        admin_key  TEXT NOT NULL,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        PRIMARY KEY (vote_key, admin_key)
-      );
-    `);
+    runMigrations(db);
   }
   return db;
 }
