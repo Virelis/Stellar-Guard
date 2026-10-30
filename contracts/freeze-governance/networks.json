@@ -1,0 +1,24 @@
+{
+  "networks": {
+    "local": {
+      "rpcUrl": "http://localhost:8000/soroban/rpc",
+      "networkPassphrase": "Standalone Network ; February 2017",
+      "horizonUrl": "http://localhost:8000"
+    },
+    "testnet": {
+      "rpcUrl": "https://soroban-testnet.stellar.org",
+      "networkPassphrase": "Test SDF Network ; September 2015",
+      "horizonUrl": "https://horizon-testnet.stellar.org"
+    },
+    "futurenet": {
+      "rpcUrl": "https://rpc-futurenet.stellar.org",
+      "networkPassphrase": "Test SDF Future Network ; October 2022",
+      "horizonUrl": "https://horizon-futurenet.stellar.org"
+    },
+    "mainnet": {
+      "rpcUrl": "https://mainnet.sorobanrpc.com",
+      "networkPassphrase": "Public Global Stellar Network ; September 2015",
+      "horizonUrl": "https://horizon.stellar.org"
+    }
+  }
+}
