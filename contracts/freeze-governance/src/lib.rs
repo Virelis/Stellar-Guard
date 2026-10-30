@@ -547,19 +547,25 @@ impl FreezeGovernance {
         }
 
         proposal.votes.push_back(caller.clone());
-        let vote_count = proposal.votes.len();
         let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
         let seq = Self::next_action_sequence(&env);
 
+        let mut valid_votes = 0u32;
+        for i in 0..proposal.votes.len() {
+            if admins.contains(&proposal.votes.get(i).unwrap()) {
+                valid_votes += 1;
+            }
+        }
+
         env.events().publish(
             (symbol_short!("VOTE"), symbol_short!("FRZ"), target.clone()),
-            (caller, vote_count, seq),
+            (caller, valid_votes, seq),
         );
 
-        if vote_count >= quorum {
+        if valid_votes >= quorum {
             env.events().publish(
                 (symbol_short!("FREEZE"), asset_code, issuer, target),
-                vote_count,
+                valid_votes,
             );
             env.storage().temporary().remove(&proposal_key);
         } else {
@@ -569,7 +575,7 @@ impl FreezeGovernance {
                 .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
         }
 
-        Ok(vote_count)
+        Ok(valid_votes)
     }
 
     /// Cast a vote to freeze `target`'s `asset_code` balance.
@@ -672,19 +678,25 @@ impl FreezeGovernance {
         }
 
         proposal.votes.push_back(caller.clone());
-        let vote_count = proposal.votes.len();
         let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
         let seq = Self::next_action_sequence(&env);
 
+        let mut valid_votes = 0u32;
+        for i in 0..proposal.votes.len() {
+            if admins.contains(&proposal.votes.get(i).unwrap()) {
+                valid_votes += 1;
+            }
+        }
+
         env.events().publish(
-            (symbol_short!("VOTE"), symbol_short!("FRZ"), target.clone()),
-            (caller, vote_count, seq),
+            (symbol_short!("VOTE"), symbol_short!("UNFRZ"), target.clone()),
+            (caller, valid_votes, seq),
         );
 
-        if vote_count >= quorum {
+        if valid_votes >= quorum {
             env.events().publish(
                 (symbol_short!("UNFREEZ"), asset_code, issuer, target),
-                vote_count,
+                valid_votes,
             );
             env.storage().temporary().remove(&proposal_key);
         } else {
@@ -694,7 +706,7 @@ impl FreezeGovernance {
                 .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
         }
 
-        Ok(vote_count)
+        Ok(valid_votes)
     }
 
     /// Revoke a previously cast vote for a freeze proposal.
@@ -1323,6 +1335,38 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_removed_admin_votes_not_counted_towards_quorum() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // a3 votes on freeze proposal
+        assert_eq!(client.vote_freeze(&a3, &asset(&env), &issuer, &target), 1);
+
+        // a3 is removed as an admin
+        client.remove_admin(&a1, &a3);
+
+        // a1 now votes. Because a3 is no longer an admin, only a1's vote is valid (count 1, below quorum 2)
+        assert_eq!(client.vote_freeze(&a1, &asset(&env), &issuer, &target), 1);
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), true);
+
+        // a2 votes -> valid votes reaches quorum 2 -> executed and cleared!
+        assert_eq!(client.vote_freeze(&a2, &asset(&env), &issuer, &target), 2);
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), false);
     }
 
     #[test]
