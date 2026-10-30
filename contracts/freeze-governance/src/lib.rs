@@ -18,6 +18,7 @@ pub const PROPOSERS_KEY: soroban_sdk::Symbol = symbol_short!("PROPOSRS");
 pub const PAUSED_KEY: soroban_sdk::Symbol = symbol_short!("PAUSED");
 pub const ACTION_SEQ_KEY: soroban_sdk::Symbol = symbol_short!("ACT_SEQ");
 pub const WHITELIST_KEY: soroban_sdk::Symbol = symbol_short!("WHTLIST");
+pub const AUDITORS_KEY: soroban_sdk::Symbol = symbol_short!("AUDITORS");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -100,6 +101,7 @@ impl FreezeGovernance {
         env.storage().instance().set(&PAUSED_KEY, &false);
         env.storage().instance().set(&ACTION_SEQ_KEY, &0u64);
         env.storage().instance().set(&WHITELIST_KEY, &Vec::<Address>::new(&env));
+        env.storage().instance().set(&AUDITORS_KEY, &Vec::<Address>::new(&env));
         Ok(())
     }
 
@@ -191,6 +193,88 @@ impl FreezeGovernance {
 
         env.deployer().update_current_contract_wasm(new_wasm_hash.clone());
         env.events().publish((symbol_short!("CONTRACT"), symbol_short!("UPGRADE")), new_wasm_hash);
+        Ok(())
+    }
+
+    /// Return the list of designated regulatory auditors.
+    pub fn get_auditors(env: Env) -> Vec<Address> {
+        env.storage()
+            .instance()
+            .get(&AUDITORS_KEY)
+            .unwrap_or(Vec::new(&env))
+    }
+
+    /// Check if an account is a registered auditor.
+    pub fn is_auditor(env: Env, account: Address) -> bool {
+        let list: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&AUDITORS_KEY)
+            .unwrap_or(Vec::new(&env));
+        list.contains(&account)
+    }
+
+    /// Add an auditor view key. Requires admin.
+    pub fn add_auditor(env: Env, caller: Address, new_auditor: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let mut list: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&AUDITORS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !list.contains(&new_auditor) {
+            list.push_back(new_auditor.clone());
+            env.storage().instance().set(&AUDITORS_KEY, &list);
+            env.events().publish((symbol_short!("AUDITOR"), symbol_short!("ADD")), new_auditor);
+        }
+        Ok(())
+    }
+
+    /// Remove a registered auditor. Requires admin.
+    pub fn remove_auditor(env: Env, caller: Address, auditor_to_remove: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let mut list: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&AUDITORS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..list.len() {
+            if list.get(i).unwrap() == auditor_to_remove {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
+
+        if found {
+            list.remove(idx);
+            env.storage().instance().set(&AUDITORS_KEY, &list);
+            env.events().publish((symbol_short!("AUDITOR"), symbol_short!("REMOVE")), auditor_to_remove);
+        }
         Ok(())
     }
 
@@ -1375,6 +1459,27 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_auditor_role_registry() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin = Address::generate(&env);
+        let auditor = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        assert_eq!(client.is_auditor(&auditor), false);
+        client.add_auditor(&admin, &auditor);
+        assert_eq!(client.is_auditor(&auditor), true);
+        assert_eq!(client.get_auditors().len(), 1);
+
+        client.remove_auditor(&admin, &auditor);
+        assert_eq!(client.is_auditor(&auditor), false);
     }
 
     #[test]
