@@ -42,6 +42,7 @@ pub struct FreezeProposal {
     pub issuer: Address,
     pub target: Address,
     pub votes: Vec<Address>,
+    pub created_ledger: u32,
 }
 
 #[contract]
@@ -122,17 +123,24 @@ impl FreezeGovernance {
         }
 
         let proposal_key = (symbol_short!("FRZ"), asset_code.clone(), target.clone());
+        let current_ledger = env.ledger().sequence();
 
-        let mut proposal: FreezeProposal =
-            env.storage()
-                .temporary()
-                .get(&proposal_key)
-                .unwrap_or(FreezeProposal {
-                    asset_code: asset_code.clone(),
-                    issuer: issuer.clone(),
-                    target: target.clone(),
-                    votes: Vec::new(&env),
-                });
+        let mut proposal: FreezeProposal = match env.storage().temporary().get(&proposal_key) {
+            Some(p) => {
+                let p: FreezeProposal = p;
+                if current_ledger > p.created_ledger.saturating_add(PROPOSAL_TTL) {
+                    return Err(Error::ProposalExpired);
+                }
+                p
+            }
+            None => FreezeProposal {
+                asset_code: asset_code.clone(),
+                issuer: issuer.clone(),
+                target: target.clone(),
+                votes: Vec::new(&env),
+                created_ledger: current_ledger,
+            },
+        };
 
         if proposal.votes.contains(&caller) {
             return Err(Error::AlreadyVoted);
@@ -180,17 +188,24 @@ impl FreezeGovernance {
         }
 
         let proposal_key = (symbol_short!("UNFRZ"), asset_code.clone(), target.clone());
+        let current_ledger = env.ledger().sequence();
 
-        let mut proposal: FreezeProposal =
-            env.storage()
-                .temporary()
-                .get(&proposal_key)
-                .unwrap_or(FreezeProposal {
-                    asset_code: asset_code.clone(),
-                    issuer: issuer.clone(),
-                    target: target.clone(),
-                    votes: Vec::new(&env),
-                });
+        let mut proposal: FreezeProposal = match env.storage().temporary().get(&proposal_key) {
+            Some(p) => {
+                let p: FreezeProposal = p;
+                if current_ledger > p.created_ledger.saturating_add(PROPOSAL_TTL) {
+                    return Err(Error::ProposalExpired);
+                }
+                p
+            }
+            None => FreezeProposal {
+                asset_code: asset_code.clone(),
+                issuer: issuer.clone(),
+                target: target.clone(),
+                votes: Vec::new(&env),
+                created_ledger: current_ledger,
+            },
+        };
 
         if proposal.votes.contains(&caller) {
             return Err(Error::AlreadyVoted);
@@ -251,6 +266,36 @@ impl FreezeGovernance {
         env.storage()
             .temporary()
             .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
+        Ok(())
+    }
+
+    /// Prune an expired proposal to reclaim storage state.
+    pub fn prune_expired(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        let current_ledger = env.ledger().sequence();
+        if current_ledger <= proposal.created_ledger.saturating_add(PROPOSAL_TTL) {
+            return Err(Error::InvalidParameter);
+        }
+
+        env.storage().temporary().remove(&proposal_key);
         Ok(())
     }
 
@@ -328,7 +373,7 @@ impl FreezeGovernance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Env, String};
+    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, Env, String};
 
     fn asset(env: &Env) -> String {
         String::from_str(env, "RWAUSD")
@@ -379,6 +424,36 @@ mod tests {
         assert_eq!(client.get_unfreeze_votes(&asset(&env), &target), 1);
         assert_eq!(client.vote_unfreeze(&a2, &asset(&env), &issuer, &target), 2);
         assert_eq!(client.get_unfreeze_votes(&asset(&env), &target), 0);
+    }
+
+    #[test]
+    fn test_proposal_expiration_and_pruning() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_votes(&asset(&env), &target), 1);
+
+        // Advance ledger beyond PROPOSAL_TTL
+        env.ledger().with_mut(|li| {
+            li.sequence_number += PROPOSAL_TTL + 10;
+        });
+
+        // Voting on expired proposal is rejected
+        let res = client.try_vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(res, Err(Ok(Error::ProposalExpired)));
+
+        // Prune the expired proposal
+        client.prune_expired(&a1, &asset(&env), &target, &false);
+        assert_eq!(client.get_votes(&asset(&env), &target), 0);
     }
 
     #[test]
