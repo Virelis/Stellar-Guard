@@ -781,6 +781,46 @@ impl FreezeGovernance {
         Ok(())
     }
 
+    /// Cancel an unvoted proposal before voting begins. Callable by admin.
+    pub fn cancel_proposal(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix.clone(), asset_code, target.clone());
+        let proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        if proposal.votes.len() > 0 {
+            return Err(Error::InvalidParameter);
+        }
+
+        env.storage().temporary().remove(&proposal_key);
+        env.events().publish((symbol_short!("CANCEL"), prefix, target), caller);
+        Ok(())
+    }
+
     /// Explicitly bump storage TTL for an active proposal to prevent eviction.
     pub fn bump_proposal_ttl(
         env: Env,
@@ -1335,6 +1375,28 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_cancel_unvoted_proposal() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Create proposal with propose_freeze (0 votes)
+        client.propose_freeze(&a1, &asset(&env), &issuer, &target, &String::from_str(&env, "mistake"));
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), true);
+
+        // Cancel it before any votes
+        client.cancel_proposal(&a1, &asset(&env), &target, &false);
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), false);
     }
 
     #[test]
