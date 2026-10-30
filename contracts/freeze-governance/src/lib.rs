@@ -15,6 +15,7 @@ pub const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
 pub const QUORUM_KEY: soroban_sdk::Symbol = symbol_short!("QUORUM");
 pub const TTL_KEY: soroban_sdk::Symbol = symbol_short!("PRP_TTL");
 pub const PROPOSERS_KEY: soroban_sdk::Symbol = symbol_short!("PROPOSRS");
+pub const PAUSED_KEY: soroban_sdk::Symbol = symbol_short!("PAUSED");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -80,6 +81,46 @@ impl FreezeGovernance {
         env.storage().instance().set(&QUORUM_KEY, &q);
         env.storage().instance().set(&TTL_KEY, &DEFAULT_PROPOSAL_TTL);
         env.storage().instance().set(&PROPOSERS_KEY, &Vec::<Address>::new(&env));
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        Ok(())
+    }
+
+    /// Check whether contract governance operations are paused.
+    pub fn is_paused(env: Env) -> bool {
+        env.storage().instance().get(&PAUSED_KEY).unwrap_or(false)
+    }
+
+    /// Pause all governance voting and proposals. Requires admin authority.
+    pub fn pause(env: Env, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+        env.storage().instance().set(&PAUSED_KEY, &true);
+        env.events().publish((symbol_short!("STATE"), symbol_short!("PAUSE")), caller);
+        Ok(())
+    }
+
+    /// Resume governance voting and proposals. Requires admin authority.
+    pub fn unpause(env: Env, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        env.events().publish((symbol_short!("STATE"), symbol_short!("RESUME")), caller);
         Ok(())
     }
 
@@ -213,6 +254,9 @@ impl FreezeGovernance {
         evidence_hash: String,
     ) -> Result<(), Error> {
         caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
 
         let admins: Vec<Address> = env
             .storage()
@@ -276,6 +320,9 @@ impl FreezeGovernance {
         target: Address,
         evidence_hash: String,
     ) -> Result<u32, Error> {
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
         let admins: Vec<Address> = env
             .storage()
             .instance()
@@ -390,6 +437,9 @@ impl FreezeGovernance {
         target: Address,
     ) -> Result<u32, Error> {
         caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
 
         let admins: Vec<Address> = env
             .storage()
@@ -688,6 +738,34 @@ mod tests {
         assert_eq!(counts.get(0).unwrap(), 1);
         assert_eq!(counts.get(1).unwrap(), 1);
         assert_eq!(counts.get(2).unwrap(), 1);
+    }
+
+    #[test]
+    fn test_pause_circuit_breaker() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        assert_eq!(client.is_paused(), false);
+        client.pause(&admin);
+        assert_eq!(client.is_paused(), true);
+
+        // Voting while paused must fail with ContractPaused error
+        let err = client.try_vote_freeze(&admin, &asset(&env), &issuer, &target);
+        assert_eq!(err, Err(Ok(Error::ContractPaused)));
+
+        // Unpausing restores voting capability
+        client.unpause(&admin);
+        assert_eq!(client.is_paused(), false);
+        let res = client.vote_freeze(&admin, &asset(&env), &issuer, &target);
+        assert_eq!(res, 1);
     }
 
     #[test]
