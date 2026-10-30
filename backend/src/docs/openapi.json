@@ -1,0 +1,188 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Stellar-Guard Multi-Sig Governance & Asset Quarantine API",
+    "version": "1.0.0",
+    "description": "Institutional-grade real-time asset quarantine, multi-sig freeze governance, and AML compliance API for the Stellar network and Soroban smart contracts."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health and database check",
+        "responses": {
+          "200": { "description": "System operational" },
+          "503": { "description": "System degraded or database unreachable" }
+        }
+      }
+    },
+    "/api/config/capabilities": {
+      "get": {
+        "summary": "Retrieve network and backend capabilities",
+        "responses": {
+          "200": { "description": "Capabilities and network configuration metadata" }
+        }
+      }
+    },
+    "/api/auth/challenge": {
+      "get": {
+        "summary": "Generate SEP-0010 cryptographic WebAuth challenge",
+        "parameters": [
+          { "name": "account", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "home_domain", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "SEP-0010 challenge transaction envelope XDR" },
+          "400": { "description": "Invalid account address format" }
+        }
+      }
+    },
+    "/api/auth/token": {
+      "post": {
+        "summary": "Exchange client-signed challenge for authenticated JWT",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "transaction": { "type": "string" } },
+                "required": ["transaction"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authenticated Bearer JWT" },
+          "400": { "description": "Invalid cryptographic signature" }
+        }
+      }
+    },
+    "/api/freeze/build": {
+      "post": {
+        "summary": "Construct unsigned Soroban freeze proposal transaction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "adminKey": { "type": "string" },
+                  "assetCode": { "type": "string" },
+                  "issuer": { "type": "string" },
+                  "target": { "type": "string" }
+                },
+                "required": ["adminKey", "assetCode", "issuer", "target"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Unsigned transaction XDR for wallet signature" }
+        }
+      }
+    },
+    "/api/freeze/submit": {
+      "post": {
+        "summary": "Submit signed vote transaction to Stellar network",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "signedXdr": { "type": "string" },
+                  "assetCode": { "type": "string" },
+                  "issuer": { "type": "string" },
+                  "target": { "type": "string" }
+                },
+                "required": ["signedXdr", "assetCode", "issuer", "target"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Vote recorded or quarantine executed" }
+        }
+      }
+    },
+    "/api/xdr/decode": {
+      "post": {
+        "summary": "Decode base64 Stellar transaction XDR for preview",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "xdr": { "type": "string" } },
+                "required": ["xdr"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Decoded operations and parameters" }
+        }
+      }
+    },
+    "/api/events/stream": {
+      "get": {
+        "summary": "Server-Sent Events (SSE) live governance event stream",
+        "responses": {
+          "200": { "description": "text/event-stream broadcast connection" }
+        }
+      }
+    },
+    "/api/audit": {
+      "get": {
+        "summary": "Query compliance audit log entries",
+        "parameters": [
+          { "name": "target", "in": "query", "schema": { "type": "string" } },
+          { "name": "eventType", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated audit trail records" }
+        }
+      }
+    },
+    "/api/webhooks": {
+      "get": {
+        "summary": "List active webhook subscriptions",
+        "responses": {
+          "200": { "description": "Array of registered webhooks" }
+        }
+      },
+      "post": {
+        "summary": "Register a new compliance webhook destination",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string" },
+                  "eventFilter": { "type": "string" }
+                },
+                "required": ["url"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Webhook registered with HMAC secret" }
+        }
+      }
+    }
+  }
+}
