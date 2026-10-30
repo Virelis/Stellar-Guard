@@ -21,6 +21,7 @@ pub const ACTION_SEQ_KEY: soroban_sdk::Symbol = symbol_short!("ACT_SEQ");
 pub const WHITELIST_KEY: soroban_sdk::Symbol = symbol_short!("WHTLIST");
 pub const AUDITORS_KEY: soroban_sdk::Symbol = symbol_short!("AUDITORS");
 pub const COOLDOWN_KEY: soroban_sdk::Symbol = symbol_short!("COOLDOWN");
+pub const TIMELOCK_KEY: soroban_sdk::Symbol = symbol_short!("TIMELOCK");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -42,6 +43,8 @@ pub enum Error {
     UnauthorizedCaller = 14,
     InvalidParameter = 15,
     CooldownActive = 16,
+    TimelockActive = 17,
+    TimelockNotMet = 18,
 }
 
 #[contracttype]
@@ -51,6 +54,7 @@ pub enum ProposalStatus {
     None = 0,
     Active = 1,
     Expired = 2,
+    Queued = 3,
 }
 
 #[contracttype]
@@ -78,6 +82,7 @@ pub struct FreezeProposal {
     pub negative_votes: Vec<Address>,
     pub created_timestamp: u64,
     pub reason_code: u32,
+    pub timelock_until: u64,
 }
 
 #[contract]
@@ -119,6 +124,29 @@ impl FreezeGovernance {
         env.storage().instance().set(&WHITELIST_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&AUDITORS_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&COOLDOWN_KEY, &0u64);
+        env.storage().instance().set(&TIMELOCK_KEY, &0u64);
+        Ok(())
+    }
+
+    /// Return the execution timelock delay in seconds.
+    pub fn get_timelock_delay(env: Env) -> u64 {
+        env.storage().instance().get(&TIMELOCK_KEY).unwrap_or(0)
+    }
+
+    /// Set execution timelock delay parameter in seconds. Requires admin authorization.
+    pub fn set_timelock_delay(env: Env, caller: Address, delay_seconds: u64) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+        env.storage().instance().set(&TIMELOCK_KEY, &delay_seconds);
+        env.events().publish((symbol_short!("GOV"), symbol_short!("TMLOCK")), delay_seconds);
         Ok(())
     }
 
@@ -604,6 +632,7 @@ impl FreezeGovernance {
                 negative_votes: Vec::new(&env),
                 created_timestamp: env.ledger().timestamp(),
                 reason_code: 0,
+                timelock_until: 0,
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -671,6 +700,7 @@ impl FreezeGovernance {
                 negative_votes: Vec::new(&env),
                 created_timestamp: env.ledger().timestamp(),
                 reason_code,
+                timelock_until: 0,
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -770,6 +800,7 @@ impl FreezeGovernance {
                     negative_votes: Vec::new(&env),
                     created_timestamp: env.ledger().timestamp(),
                     reason_code: 0,
+                    timelock_until: 0,
                 }
             }
         };
@@ -795,11 +826,21 @@ impl FreezeGovernance {
         );
 
         if valid_votes >= quorum {
-            env.events().publish(
-                (symbol_short!("FREEZE"), asset_code, issuer, target),
-                valid_votes,
-            );
-            env.storage().temporary().remove(&proposal_key);
+            let timelock_delay: u64 = env.storage().instance().get(&TIMELOCK_KEY).unwrap_or(0);
+            if timelock_delay > 0 && proposal.timelock_until == 0 {
+                proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
+                env.storage().temporary().set(&proposal_key, &proposal);
+                env.events().publish(
+                    (symbol_short!("TIMELOCK"), symbol_short!("QUEUED"), target),
+                    (proposal.timelock_until, seq),
+                );
+            } else if timelock_delay == 0 {
+                env.events().publish(
+                    (symbol_short!("FREEZE"), asset_code, issuer, target),
+                    valid_votes,
+                );
+                env.storage().temporary().remove(&proposal_key);
+            }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -935,6 +976,7 @@ impl FreezeGovernance {
                     negative_votes: Vec::new(&env),
                     created_timestamp: env.ledger().timestamp(),
                     reason_code: 0,
+                    timelock_until: 0,
                 }
             }
         };
@@ -960,11 +1002,21 @@ impl FreezeGovernance {
         );
 
         if valid_votes >= quorum {
-            env.events().publish(
-                (symbol_short!("UNFREEZ"), asset_code, issuer, target),
-                valid_votes,
-            );
-            env.storage().temporary().remove(&proposal_key);
+            let timelock_delay: u64 = env.storage().instance().get(&TIMELOCK_KEY).unwrap_or(0);
+            if timelock_delay > 0 && proposal.timelock_until == 0 {
+                proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
+                env.storage().temporary().set(&proposal_key, &proposal);
+                env.events().publish(
+                    (symbol_short!("TIMELOCK"), symbol_short!("QUEUED"), target),
+                    (proposal.timelock_until, seq),
+                );
+            } else if timelock_delay == 0 {
+                env.events().publish(
+                    (symbol_short!("UNFREEZ"), asset_code, issuer, target),
+                    valid_votes,
+                );
+                env.storage().temporary().remove(&proposal_key);
+            }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -1180,14 +1232,103 @@ impl FreezeGovernance {
         match proposal {
             None => ProposalStatus::None,
             Some(p) => {
-                let current_ledger = env.ledger().sequence();
-                if current_ledger > p.created_ledger.saturating_add(p.ttl) {
-                    ProposalStatus::Expired
+                if p.timelock_until > 0 {
+                    ProposalStatus::Queued
                 } else {
-                    ProposalStatus::Active
+                    let current_ledger = env.ledger().sequence();
+                    if current_ledger > p.created_ledger.saturating_add(p.ttl) {
+                        ProposalStatus::Expired
+                    } else {
+                        ProposalStatus::Active
+                    }
                 }
             }
         }
+    }
+
+    /// Return the timelock expiration timestamp (Unix epoch) for a queued proposal.
+    pub fn get_proposal_timelock_until(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> u64 {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        proposal.map(|p| p.timelock_until).unwrap_or(0)
+    }
+
+    /// Execute a timelocked freeze proposal whose delay has elapsed.
+    pub fn execute_freeze(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
+        let proposal_key = (symbol_short!("FRZ"), asset_code.clone(), target.clone());
+        let proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        if proposal.timelock_until == 0 {
+            return Err(Error::TimelockNotMet);
+        }
+        if env.ledger().timestamp() < proposal.timelock_until {
+            return Err(Error::TimelockActive);
+        }
+
+        let seq = Self::next_action_sequence(&env);
+        env.events().publish(
+            (symbol_short!("FREEZE"), asset_code, proposal.issuer, target),
+            (proposal.votes.len(), proposal.created_ledger, seq),
+        );
+        env.storage().temporary().remove(&proposal_key);
+        Ok(())
+    }
+
+    /// Execute a timelocked unfreeze proposal whose delay has elapsed.
+    pub fn execute_unfreeze(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
+        let proposal_key = (symbol_short!("UNFRZ"), asset_code.clone(), target.clone());
+        let proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        if proposal.timelock_until == 0 {
+            return Err(Error::TimelockNotMet);
+        }
+        if env.ledger().timestamp() < proposal.timelock_until {
+            return Err(Error::TimelockActive);
+        }
+
+        let seq = Self::next_action_sequence(&env);
+        env.events().publish(
+            (symbol_short!("UNFREEZ"), asset_code, proposal.issuer, target),
+            (proposal.votes.len(), proposal.created_ledger, seq),
+        );
+        env.storage().temporary().remove(&proposal_key);
+        Ok(())
     }
 
     /// Return attached evidence metadata hash if present.
@@ -2183,5 +2324,51 @@ mod tests {
         let res2 = client.try_vote_freeze(&a1, &ast2, &issuer, &target);
         assert!(res2.is_ok());
         assert_eq!(client.get_last_proposal_timestamp(&target), 1700003601);
+    }
+
+    #[test]
+    fn test_timelock_delay_and_execution() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1700000000;
+        });
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Admin configures a 24-hour timelock delay (86400 seconds)
+        assert_eq!(client.get_timelock_delay(), 0);
+        client.set_timelock_delay(&a1, &86400);
+        assert_eq!(client.get_timelock_delay(), 86400);
+
+        // a1 votes (1 of 2, active)
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // a2 votes -> reaches quorum 2 -> enters Queued status with timelock_until = 1700000000 + 86400
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Queued);
+        assert_eq!(client.get_proposal_timelock_until(&asset(&env), &target, &false), 1700086400);
+
+        // Trying to execute before timelock expires fails
+        let premature = client.try_execute_freeze(&a1, &asset(&env), &target);
+        assert_eq!(premature, Err(Ok(Error::TimelockActive)));
+
+        // Advance past timelock
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1700086401;
+        });
+
+        // Now execute succeeds, proposal is cleared
+        let executed = client.try_execute_freeze(&a1, &asset(&env), &target);
+        assert!(executed.is_ok());
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
     }
 }
