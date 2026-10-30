@@ -827,7 +827,18 @@ impl FreezeGovernance {
 
         if valid_votes >= quorum {
             let timelock_delay: u64 = env.storage().instance().get(&TIMELOCK_KEY).unwrap_or(0);
-            if timelock_delay > 0 && proposal.timelock_until == 0 {
+            let is_unanimous = admins.len() > quorum && valid_votes >= admins.len();
+            if is_unanimous && timelock_delay > 0 {
+                env.events().publish(
+                    (symbol_short!("TMLOCK"), symbol_short!("BYPASS"), target.clone()),
+                    (valid_votes, seq),
+                );
+                env.events().publish(
+                    (symbol_short!("FREEZE"), asset_code, issuer, target),
+                    valid_votes,
+                );
+                env.storage().temporary().remove(&proposal_key);
+            } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
                 env.events().publish(
@@ -1003,7 +1014,18 @@ impl FreezeGovernance {
 
         if valid_votes >= quorum {
             let timelock_delay: u64 = env.storage().instance().get(&TIMELOCK_KEY).unwrap_or(0);
-            if timelock_delay > 0 && proposal.timelock_until == 0 {
+            let is_unanimous = admins.len() > quorum && valid_votes >= admins.len();
+            if is_unanimous && timelock_delay > 0 {
+                env.events().publish(
+                    (symbol_short!("TMLOCK"), symbol_short!("BYPASS"), target.clone()),
+                    (valid_votes, seq),
+                );
+                env.events().publish(
+                    (symbol_short!("UNFREEZ"), asset_code, issuer, target),
+                    valid_votes,
+                );
+                env.storage().temporary().remove(&proposal_key);
+            } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
                 env.events().publish(
@@ -1261,6 +1283,35 @@ impl FreezeGovernance {
         let proposal_key = (prefix, asset_code, target);
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.timelock_until).unwrap_or(0)
+    }
+
+    /// Check whether a proposal has achieved unanimous consensus across all active administrators.
+    pub fn is_unanimous_quorum_met(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> bool {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        let admins = Self::get_admins(env.clone());
+        let quorum = Self::get_quorum(env.clone());
+        if let Some(p) = proposal {
+            let mut valid = 0u32;
+            for i in 0..p.votes.len() {
+                if admins.contains(&p.votes.get(i).unwrap()) {
+                    valid += 1;
+                }
+            }
+            valid >= admins.len() && admins.len() > quorum
+        } else {
+            false
+        }
     }
 
     /// Execute a timelocked freeze proposal whose delay has elapsed.
@@ -2369,6 +2420,44 @@ mod tests {
         // Now execute succeeds, proposal is cleared
         let executed = client.try_execute_freeze(&a1, &asset(&env), &target);
         assert!(executed.is_ok());
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+    }
+
+    #[test]
+    fn test_unanimous_timelock_bypass() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        env.ledger().with_mut(|li| {
+            li.timestamp = 1700000000;
+        });
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // 24 hour timelock
+        client.set_timelock_delay(&a1, &86400);
+
+        // a1 votes (1 of 3, quorum is 2)
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // a2 votes -> reaches regular quorum (2 of 3) -> enters Queued status
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Queued);
+        assert_eq!(client.is_unanimous_quorum_met(&asset(&env), &target, &false), false);
+
+        // a3 votes -> unanimous consensus (3 of 3) -> BYPASSES timelock immediately without waiting!
+        client.vote_freeze(&a3, &asset(&env), &issuer, &target);
         assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
     }
 }
