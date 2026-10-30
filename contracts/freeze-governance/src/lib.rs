@@ -602,6 +602,42 @@ impl FreezeGovernance {
         Ok(())
     }
 
+    /// Explicitly bump storage TTL for an active proposal to prevent eviction.
+    pub fn bump_proposal_ttl(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+        ledgers_to_extend: u32,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        if !env.storage().temporary().has(&proposal_key) {
+            return Err(Error::ProposalNotFound);
+        }
+
+        env.storage()
+            .temporary()
+            .extend_ttl(&proposal_key, ledgers_to_extend, ledgers_to_extend);
+        Ok(())
+    }
+
     /// Return current vote count for a freeze proposal (0 if none or expired).
     pub fn get_votes(env: Env, asset_code: String, target: Address) -> u32 {
         let key = (symbol_short!("FRZ"), asset_code, target);
@@ -1004,6 +1040,29 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_bump_proposal_ttl() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Bumping non-existent proposal returns error
+        let err = client.try_bump_proposal_ttl(&a1, &asset(&env), &target, &false, &1000);
+        assert_eq!(err, Err(Ok(Error::ProposalNotFound)));
+
+        // Propose and then bump TTL successfully
+        client.propose_freeze(&a1, &asset(&env), &issuer, &target, &String::from_str(&env, ""));
+        let res = client.bump_proposal_ttl(&a1, &asset(&env), &target, &false, &1000);
+        assert_eq!(res, ());
     }
 
     #[test]
