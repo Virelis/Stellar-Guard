@@ -16,6 +16,7 @@ pub const QUORUM_KEY: soroban_sdk::Symbol = symbol_short!("QUORUM");
 pub const TTL_KEY: soroban_sdk::Symbol = symbol_short!("PRP_TTL");
 pub const PROPOSERS_KEY: soroban_sdk::Symbol = symbol_short!("PROPOSRS");
 pub const PAUSED_KEY: soroban_sdk::Symbol = symbol_short!("PAUSED");
+pub const ACTION_SEQ_KEY: soroban_sdk::Symbol = symbol_short!("ACT_SEQ");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -95,7 +96,20 @@ impl FreezeGovernance {
         env.storage().instance().set(&TTL_KEY, &DEFAULT_PROPOSAL_TTL);
         env.storage().instance().set(&PROPOSERS_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&PAUSED_KEY, &false);
+        env.storage().instance().set(&ACTION_SEQ_KEY, &0u64);
         Ok(())
+    }
+
+    fn next_action_sequence(env: &Env) -> u64 {
+        let current: u64 = env.storage().instance().get(&ACTION_SEQ_KEY).unwrap_or(0);
+        let next = current.saturating_add(1);
+        env.storage().instance().set(&ACTION_SEQ_KEY, &next);
+        next
+    }
+
+    /// Return the latest governance action sequence number.
+    pub fn get_action_sequence(env: Env) -> u64 {
+        env.storage().instance().get(&ACTION_SEQ_KEY).unwrap_or(0)
     }
 
     /// Validate asset code adheres to Stellar standard specifications (1-12 alphanumeric characters).
@@ -442,10 +456,11 @@ impl FreezeGovernance {
         proposal.votes.push_back(caller.clone());
         let vote_count = proposal.votes.len();
         let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let seq = Self::next_action_sequence(&env);
 
         env.events().publish(
             (symbol_short!("VOTE"), symbol_short!("FRZ"), target.clone()),
-            (caller, vote_count),
+            (caller, vote_count, seq),
         );
 
         if vote_count >= quorum {
@@ -562,10 +577,11 @@ impl FreezeGovernance {
         proposal.votes.push_back(caller.clone());
         let vote_count = proposal.votes.len();
         let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let seq = Self::next_action_sequence(&env);
 
         env.events().publish(
             (symbol_short!("VOTE"), symbol_short!("FRZ"), target.clone()),
-            (caller, vote_count),
+            (caller, vote_count, seq),
         );
 
         if vote_count >= quorum {
@@ -1177,6 +1193,24 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_action_sequence_counter() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        assert_eq!(client.get_action_sequence(), 0);
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_action_sequence(), 1);
     }
 
     #[test]
