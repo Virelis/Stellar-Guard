@@ -5,7 +5,7 @@
 
 #![no_std]
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env, String, Vec,
 };
 
 pub const DEFAULT_QUORUM: u32 = 3;
@@ -121,6 +121,24 @@ impl FreezeGovernance {
         }
         env.storage().instance().set(&PAUSED_KEY, &false);
         env.events().publish((symbol_short!("STATE"), symbol_short!("RESUME")), caller);
+        Ok(())
+    }
+
+    /// Upgrade current contract WASM bytecode. Requires admin authority.
+    pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash.clone());
+        env.events().publish((symbol_short!("CONTRACT"), symbol_short!("UPGRADE")), new_wasm_hash);
         Ok(())
     }
 
@@ -738,6 +756,24 @@ mod tests {
         assert_eq!(counts.get(0).unwrap(), 1);
         assert_eq!(counts.get(1).unwrap(), 1);
         assert_eq!(counts.get(2).unwrap(), 1);
+    }
+
+    #[test]
+    fn test_upgrade_contract_authorization() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let admin = Address::generate(&env);
+        let stranger = Address::generate(&env);
+        let dummy_wasm_hash = BytesN::from_array(&env, &[1u8; 32]);
+
+        client.init(&Vec::from_array(&env, [admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Stranger cannot upgrade contract
+        let err = client.try_upgrade(&stranger, &dummy_wasm_hash);
+        assert_eq!(err, Err(Ok(Error::UnauthorizedFreezeAttempt)));
     }
 
     #[test]
