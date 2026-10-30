@@ -70,6 +70,9 @@ impl FreezeGovernance {
         if env.storage().instance().has(&ADMINS_KEY) {
             return Err(Error::AlreadyInitialized);
         }
+        if admins.len() == 0 {
+            return Err(Error::InvalidParameter);
+        }
         let q = match quorum {
             Some(val) => {
                 if val == 0 || (admins.len() > 0 && val > admins.len()) {
@@ -177,6 +180,19 @@ impl FreezeGovernance {
     /// Retrieve active quorum requirement.
     pub fn get_quorum(env: Env) -> u32 {
         env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM)
+    }
+
+    /// Return the list of current active admin addresses.
+    pub fn get_admins(env: Env) -> Vec<Address> {
+        env.storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .unwrap_or(Vec::new(&env))
+    }
+
+    /// Return total count of active admin addresses.
+    pub fn get_admin_count(env: Env) -> u32 {
+        Self::get_admins(env).len()
     }
 
     /// Retrieve active default proposal TTL in ledgers.
@@ -1379,11 +1395,31 @@ mod tests {
     }
 
     #[test]
+    fn test_empty_init_rejection_and_admin_queries() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        // Empty admins vector is rejected
+        let err = client.try_init(&Vec::new(&env), &None);
+        assert_eq!(err, Err(Ok(Error::InvalidParameter)));
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+
+        assert_eq!(client.get_admin_count(), 2);
+        let admins = client.get_admins();
+        assert_eq!(admins.len(), 2);
+        assert_eq!(admins.get(0).unwrap(), a1);
+        assert_eq!(admins.get(1).unwrap(), a2);
+    }
+
+    #[test]
     fn test_get_votes_empty() {
         let env = Env::default();
         let cid = env.register_contract(None, FreezeGovernance);
         let client = FreezeGovernanceClient::new(&env, &cid);
-        client.init(&Vec::new(&env), &None);
+        client.init(&Vec::from_array(&env, [Address::generate(&env)]), &None);
         let target = Address::generate(&env);
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
     }
