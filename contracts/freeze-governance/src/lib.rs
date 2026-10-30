@@ -484,6 +484,9 @@ impl FreezeGovernance {
     /// Upgrade current contract WASM bytecode. Requires admin authority.
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) -> Result<(), Error> {
         caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
         let admins: Vec<Address> = env
             .storage()
             .instance()
@@ -2180,6 +2183,12 @@ mod tests {
         // Stranger cannot upgrade contract
         let err = client.try_upgrade(&stranger, &dummy_wasm_hash);
         assert_eq!(err, Err(Ok(Error::UnauthorizedFreezeAttempt)));
+
+        // Upgrade blocked when contract is paused
+        client.pause(&admin);
+        let paused_err = client.try_upgrade(&admin, &dummy_wasm_hash);
+        assert_eq!(paused_err, Err(Ok(Error::ContractPaused)));
+        client.unpause(&admin);
     }
 
     #[test]
