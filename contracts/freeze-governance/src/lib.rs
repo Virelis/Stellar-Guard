@@ -89,6 +89,24 @@ pub struct FreezeProposal {
     pub discussion_uri: String,
 }
 
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GovernanceInfo {
+    pub admin_count: u32,
+    pub quorum: u32,
+    pub proposal_ttl: u32,
+    pub is_paused: bool,
+    pub action_sequence: u64,
+    pub admin_change_count: u64,
+    pub active_proposal_count: u32,
+    pub frozen_accounts_count: u32,
+    pub timelock_delay: u64,
+    pub proposal_cooldown: u64,
+    pub proposers_count: u32,
+    pub auditors_count: u32,
+    pub whitelist_count: u32,
+}
+
 #[contract]
 pub struct FreezeGovernance;
 
@@ -292,6 +310,25 @@ impl FreezeGovernance {
     /// Return total historical admin rotations (additions and removals).
     pub fn get_admin_change_count(env: Env) -> u64 {
         env.storage().instance().get(&ADMIN_CHANGE_CNT_KEY).unwrap_or(0)
+    }
+
+    /// Return consolidated governance operational metrics in a single lightweight query.
+    pub fn get_governance_info(env: Env) -> GovernanceInfo {
+        GovernanceInfo {
+            admin_count: Self::get_admin_count(env.clone()),
+            quorum: Self::get_quorum(env.clone()),
+            proposal_ttl: Self::get_proposal_ttl(env.clone()),
+            is_paused: Self::is_paused(env.clone()),
+            action_sequence: Self::get_action_sequence(env.clone()),
+            admin_change_count: Self::get_admin_change_count(env.clone()),
+            active_proposal_count: Self::get_active_proposal_count(env.clone()),
+            frozen_accounts_count: Self::get_frozen_accounts_count(env.clone()),
+            timelock_delay: Self::get_timelock_delay(env.clone()),
+            proposal_cooldown: Self::get_proposal_cooldown(env.clone()),
+            proposers_count: env.storage().instance().get::<_, Vec<Address>>(&PROPOSERS_KEY).map(|v| v.len()).unwrap_or(0),
+            auditors_count: Self::get_auditors(env.clone()).len(),
+            whitelist_count: env.storage().instance().get::<_, Vec<Address>>(&WHITELIST_KEY).map(|v| v.len()).unwrap_or(0),
+        }
     }
 
     /// Return the execution timelock delay in seconds.
@@ -2935,5 +2972,39 @@ mod tests {
         client.vote_unfreeze(&a2, &asset(&env), &issuer, &target);
         assert_eq!(client.is_account_frozen(&asset(&env), &target), false);
         assert_eq!(client.get_frozen_accounts_count(), 0);
+    }
+
+    #[test]
+    fn test_governance_info_summary() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let p1 = Address::generate(&env);
+        let aud = Address::generate(&env);
+        let wl = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        client.add_proposer(&a1, &p1);
+        client.add_auditor(&a1, &aud);
+        client.add_whitelist(&a1, &wl);
+        client.set_timelock_delay(&a1, &3600);
+        client.set_proposal_cooldown(&a1, &60);
+
+        let info = client.get_governance_info();
+        assert_eq!(info.admin_count, 2);
+        assert_eq!(info.quorum, 2);
+        assert_eq!(info.proposal_ttl, DEFAULT_PROPOSAL_TTL);
+        assert_eq!(info.is_paused, false);
+        assert_eq!(info.proposers_count, 1);
+        assert_eq!(info.auditors_count, 1);
+        assert_eq!(info.whitelist_count, 1);
+        assert_eq!(info.timelock_delay, 3600);
+        assert_eq!(info.proposal_cooldown, 60);
+        assert_eq!(info.active_proposal_count, 0);
+        assert_eq!(info.frozen_accounts_count, 0);
     }
 }
