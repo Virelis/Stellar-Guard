@@ -316,9 +316,14 @@ impl FreezeGovernance {
             return Err(Error::AlreadyVoted);
         }
 
-        proposal.votes.push_back(caller);
+        proposal.votes.push_back(caller.clone());
         let vote_count = proposal.votes.len();
         let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+
+        env.events().publish(
+            (symbol_short!("VOTE"), symbol_short!("FRZ"), target.clone()),
+            (caller, vote_count),
+        );
 
         if vote_count >= quorum {
             env.events().publish(
@@ -423,9 +428,14 @@ impl FreezeGovernance {
             return Err(Error::AlreadyVoted);
         }
 
-        proposal.votes.push_back(caller);
+        proposal.votes.push_back(caller.clone());
         let vote_count = proposal.votes.len();
         let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+
+        env.events().publish(
+            (symbol_short!("VOTE"), symbol_short!("FRZ"), target.clone()),
+            (caller, vote_count),
+        );
 
         if vote_count >= quorum {
             env.events().publish(
@@ -452,7 +462,7 @@ impl FreezeGovernance {
     ) -> Result<(), Error> {
         caller.require_auth();
 
-        let proposal_key = (symbol_short!("FRZ"), asset_code, target);
+        let proposal_key = (symbol_short!("FRZ"), asset_code, target.clone());
         let mut proposal: FreezeProposal = env
             .storage()
             .temporary()
@@ -478,6 +488,10 @@ impl FreezeGovernance {
         env.storage()
             .temporary()
             .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
+        env.events().publish(
+            (symbol_short!("REVOKE"), symbol_short!("FRZ"), target),
+            caller,
+        );
         Ok(())
     }
 
@@ -547,8 +561,9 @@ impl FreezeGovernance {
         if admins.contains(&new_admin) {
             return Err(Error::AdminAlreadyExists);
         }
-        admins.push_back(new_admin);
+        admins.push_back(new_admin.clone());
         env.storage().instance().set(&ADMINS_KEY, &admins);
+        env.events().publish((symbol_short!("ADMIN"), symbol_short!("ADD")), new_admin);
         Ok(())
     }
 
@@ -585,6 +600,7 @@ impl FreezeGovernance {
 
         admins.remove(idx);
         env.storage().instance().set(&ADMINS_KEY, &admins);
+        env.events().publish((symbol_short!("ADMIN"), symbol_short!("REMOVE")), admin_to_remove);
         Ok(())
     }
 }
