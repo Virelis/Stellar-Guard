@@ -5,12 +5,35 @@
 //! host function will be invoked here once stabilised on testnet).
 
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, Vec};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Vec,
+};
 
-const QUORUM: u32 = 3;
+pub const DEFAULT_QUORUM: u32 = 3;
 /// Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
-const PROPOSAL_TTL: u32 = 120_960;
-const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
+pub const PROPOSAL_TTL: u32 = 120_960;
+pub const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum Error {
+    AlreadyInitialized = 1,
+    UnauthorizedFreezeAttempt = 2,
+    AlreadyVoted = 3,
+    ProposalNotFound = 4,
+    AdminAlreadyExists = 5,
+    AdminNotFound = 6,
+    CannotRemoveLastAdmin = 7,
+    BelowQuorumThreshold = 8,
+    InvalidQuorum = 9,
+    ContractPaused = 10,
+    InvalidAssetCode = 11,
+    SelfFreezeNotAllowed = 12,
+    ProposalExpired = 13,
+    UnauthorizedCaller = 14,
+    InvalidParameter = 15,
+}
 
 #[contracttype]
 #[derive(Clone)]
@@ -27,11 +50,12 @@ pub struct FreezeGovernance;
 #[contractimpl]
 impl FreezeGovernance {
     /// Initialize with a list of authorized admin addresses. One-time call.
-    pub fn init(env: Env, admins: Vec<Address>) {
+    pub fn init(env: Env, admins: Vec<Address>) -> Result<(), Error> {
         if env.storage().instance().has(&ADMINS_KEY) {
-            panic!("already initialized");
+            return Err(Error::AlreadyInitialized);
         }
         env.storage().instance().set(&ADMINS_KEY, &admins);
+        Ok(())
     }
 
     /// Cast a vote to freeze `target`'s `asset_code` balance.
@@ -42,12 +66,17 @@ impl FreezeGovernance {
         asset_code: String,
         issuer: Address,
         target: Address,
-    ) -> u32 {
+    ) -> Result<u32, Error> {
         caller.require_auth();
 
-        let admins: Vec<Address> = env.storage().instance().get(&ADMINS_KEY).unwrap();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
         if !admins.contains(&caller) {
-            panic!("UnauthorizedFreezeAttempt");
+            return Err(Error::UnauthorizedFreezeAttempt);
         }
 
         let proposal_key = (asset_code.clone(), target.clone());
@@ -64,13 +93,13 @@ impl FreezeGovernance {
                 });
 
         if proposal.votes.contains(&caller) {
-            panic!("already voted");
+            return Err(Error::AlreadyVoted);
         }
 
         proposal.votes.push_back(caller);
         let vote_count = proposal.votes.len();
 
-        if vote_count >= QUORUM {
+        if vote_count >= DEFAULT_QUORUM {
             // CAP-0077: emit FREEZE event. When freeze_entry host function
             // is stabilised on testnet, replace this with the host call.
             env.events().publish(
@@ -86,11 +115,16 @@ impl FreezeGovernance {
                 .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
         }
 
-        vote_count
+        Ok(vote_count)
     }
 
     /// Revoke a previously cast vote.
-    pub fn revoke_vote(env: Env, caller: Address, asset_code: String, target: Address) {
+    pub fn revoke_vote(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+    ) -> Result<(), Error> {
         caller.require_auth();
 
         let proposal_key = (asset_code, target);
@@ -98,19 +132,28 @@ impl FreezeGovernance {
             .storage()
             .temporary()
             .get(&proposal_key)
-            .expect("no proposal found");
+            .ok_or(Error::ProposalNotFound)?;
 
-        let idx = proposal
-            .votes
-            .iter()
-            .position(|v| v == caller)
-            .expect("caller has not voted");
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..proposal.votes.len() {
+            if proposal.votes.get(i).unwrap() == caller {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
 
-        proposal.votes.remove(idx as u32);
+        if !found {
+            return Err(Error::ProposalNotFound);
+        }
+
+        proposal.votes.remove(idx);
         env.storage().temporary().set(&proposal_key, &proposal);
         env.storage()
             .temporary()
             .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
+        Ok(())
     }
 
     /// Return current vote count for a proposal (0 if none or expired).
@@ -121,35 +164,59 @@ impl FreezeGovernance {
     }
 
     /// Add a new admin. Requires caller to be an existing admin.
-    pub fn add_admin(env: Env, caller: Address, new_admin: Address) {
+    pub fn add_admin(env: Env, caller: Address, new_admin: Address) -> Result<(), Error> {
         caller.require_auth();
-        let mut admins: Vec<Address> = env.storage().instance().get(&ADMINS_KEY).unwrap();
+        let mut admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
         if !admins.contains(&caller) {
-            panic!("UnauthorizedFreezeAttempt");
+            return Err(Error::UnauthorizedFreezeAttempt);
         }
-        if !admins.contains(&new_admin) {
-            admins.push_back(new_admin);
-            env.storage().instance().set(&ADMINS_KEY, &admins);
+        if admins.contains(&new_admin) {
+            return Err(Error::AdminAlreadyExists);
         }
+        admins.push_back(new_admin);
+        env.storage().instance().set(&ADMINS_KEY, &admins);
+        Ok(())
     }
 
     /// Remove an admin. Requires caller to be an existing admin.
     /// Cannot remove the last admin.
-    pub fn remove_admin(env: Env, caller: Address, admin_to_remove: Address) {
+    pub fn remove_admin(env: Env, caller: Address, admin_to_remove: Address) -> Result<(), Error> {
         caller.require_auth();
-        let mut admins: Vec<Address> = env.storage().instance().get(&ADMINS_KEY).unwrap();
+        let mut admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
         if !admins.contains(&caller) {
-            panic!("UnauthorizedFreezeAttempt");
+            return Err(Error::UnauthorizedFreezeAttempt);
         }
         if admins.len() <= 1 {
-            panic!("cannot remove last admin");
+            return Err(Error::CannotRemoveLastAdmin);
         }
-        let idx = admins
-            .iter()
-            .position(|a| a == admin_to_remove)
-            .expect("admin not found");
-        admins.remove(idx as u32);
+
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..admins.len() {
+            if admins.get(i).unwrap() == admin_to_remove {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
+
+        if !found {
+            return Err(Error::AdminNotFound);
+        }
+
+        admins.remove(idx);
         env.storage().instance().set(&ADMINS_KEY, &admins);
+        Ok(())
     }
 }
 
@@ -228,7 +295,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "UnauthorizedFreezeAttempt")]
     fn test_unauthorized_vote() {
         let env = Env::default();
         let cid = env.register_contract(None, FreezeGovernance);
@@ -241,7 +307,8 @@ mod tests {
 
         client.init(&Vec::from_array(&env, [a1.clone()]));
         env.mock_all_auths();
-        client.vote_freeze(&stranger, &asset(&env), &issuer, &target);
+        let res = client.try_vote_freeze(&stranger, &asset(&env), &issuer, &target);
+        assert_eq!(res, Err(Ok(Error::UnauthorizedFreezeAttempt)));
     }
 
     #[test]

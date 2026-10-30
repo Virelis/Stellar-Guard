@@ -1,5 +1,7 @@
 # Rust
 target/
+test_snapshots/
+contracts/freeze-governance/test_snapshots/
 # Cargo.lock is intentionally tracked for binary/contract crates
 
 # Node
