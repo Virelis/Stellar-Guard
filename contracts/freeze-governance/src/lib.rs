@@ -23,6 +23,7 @@ pub const AUDITORS_KEY: soroban_sdk::Symbol = symbol_short!("AUDITORS");
 pub const COOLDOWN_KEY: soroban_sdk::Symbol = symbol_short!("COOLDOWN");
 pub const TIMELOCK_KEY: soroban_sdk::Symbol = symbol_short!("TIMELOCK");
 pub const ADMIN_CHANGE_CNT_KEY: soroban_sdk::Symbol = symbol_short!("ADM_CHG");
+pub const ACTIVE_PROPOSALS_KEY: soroban_sdk::Symbol = symbol_short!("ACT_PRP");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -128,7 +129,76 @@ impl FreezeGovernance {
         env.storage().instance().set(&COOLDOWN_KEY, &0u64);
         env.storage().instance().set(&TIMELOCK_KEY, &0u64);
         env.storage().instance().set(&ADMIN_CHANGE_CNT_KEY, &0u64);
+        env.storage().instance().set(&ACTIVE_PROPOSALS_KEY, &Vec::<(String, Address, bool)>::new(&env));
         Ok(())
+    }
+
+    fn add_active_proposal_key(env: &Env, asset_code: &String, target: &Address, is_unfreeze: bool) {
+        let mut list: Vec<(String, Address, bool)> = env
+            .storage()
+            .instance()
+            .get(&ACTIVE_PROPOSALS_KEY)
+            .unwrap_or(Vec::new(env));
+        let item = (asset_code.clone(), target.clone(), is_unfreeze);
+        if !list.contains(&item) {
+            list.push_back(item);
+            env.storage().instance().set(&ACTIVE_PROPOSALS_KEY, &list);
+        }
+    }
+
+    fn remove_active_proposal_key(env: &Env, asset_code: &String, target: &Address, is_unfreeze: bool) {
+        let mut list: Vec<(String, Address, bool)> = env
+            .storage()
+            .instance()
+            .get(&ACTIVE_PROPOSALS_KEY)
+            .unwrap_or(Vec::new(env));
+        let item = (asset_code.clone(), target.clone(), is_unfreeze);
+        let mut idx = 0u32;
+        let mut found = false;
+        for i in 0..list.len() {
+            if list.get(i).unwrap() == item {
+                idx = i;
+                found = true;
+                break;
+            }
+        }
+        if found {
+            list.remove(idx);
+            env.storage().instance().set(&ACTIVE_PROPOSALS_KEY, &list);
+        }
+    }
+
+    /// Return total active proposals recorded in the on-chain index.
+    pub fn get_active_proposal_count(env: Env) -> u32 {
+        let list: Vec<(String, Address, bool)> = env
+            .storage()
+            .instance()
+            .get(&ACTIVE_PROPOSALS_KEY)
+            .unwrap_or(Vec::new(&env));
+        list.len()
+    }
+
+    /// Return paginated active proposals (asset_code, target, is_unfreeze).
+    pub fn get_active_proposals(
+        env: Env,
+        start_index: u32,
+        limit: u32,
+    ) -> Vec<(String, Address, bool)> {
+        let list: Vec<(String, Address, bool)> = env
+            .storage()
+            .instance()
+            .get(&ACTIVE_PROPOSALS_KEY)
+            .unwrap_or(Vec::new(&env));
+        let mut result = Vec::new(&env);
+        let total = list.len();
+        if start_index >= total || limit == 0 {
+            return result;
+        }
+        let end = (start_index.saturating_add(limit)).min(total);
+        for i in start_index..end {
+            result.push_back(list.get(i).unwrap());
+        }
+        result
     }
 
     fn increment_admin_change_count(env: &Env) -> u64 {
@@ -654,6 +724,7 @@ impl FreezeGovernance {
             env.storage()
                 .temporary()
                 .extend_ttl(&proposal_key, active_ttl, active_ttl);
+            Self::add_active_proposal_key(&env, &asset_code, &target, false);
             env.events().publish(
                 (symbol_short!("PROPOSE"), asset_code, issuer, target),
                 caller,
@@ -723,6 +794,7 @@ impl FreezeGovernance {
             env.storage()
                 .temporary()
                 .extend_ttl(&proposal_key, active_ttl, active_ttl);
+            Self::add_active_proposal_key(&env, &asset_code, &target, false);
             env.events().publish(
                 (symbol_short!("PROPOSE"), asset_code, issuer, target),
                 (caller, reason_code),
@@ -793,6 +865,7 @@ impl FreezeGovernance {
             env.storage()
                 .temporary()
                 .extend_ttl(&proposal_key, active_ttl, active_ttl);
+            Self::add_active_proposal_key(&env, &asset_code, &target, false);
             env.events().publish(
                 (symbol_short!("PROPOSE"), asset_code, issuer, target),
                 (caller, reason_code),
@@ -813,7 +886,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.reason_code).unwrap_or(0)
     }
@@ -876,7 +949,7 @@ impl FreezeGovernance {
             }
             None => {
                 Self::check_and_update_cooldown(&env, &target)?;
-                FreezeProposal {
+                let p = FreezeProposal {
                     asset_code: asset_code.clone(),
                     issuer: issuer.clone(),
                     target: target.clone(),
@@ -889,7 +962,9 @@ impl FreezeGovernance {
                     reason_code: 0,
                     timelock_until: 0,
                     discussion_uri: String::from_str(&env, ""),
-                }
+                };
+                Self::add_active_proposal_key(&env, &asset_code, &target, false);
+                p
             }
         };
 
@@ -922,10 +997,11 @@ impl FreezeGovernance {
                     (valid_votes, seq),
                 );
                 env.events().publish(
-                    (symbol_short!("FREEZE"), asset_code, issuer, target),
+                    (symbol_short!("FREEZE"), asset_code.clone(), issuer, target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
+                Self::remove_active_proposal_key(&env, &asset_code, &target, false);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -935,10 +1011,11 @@ impl FreezeGovernance {
                 );
             } else if timelock_delay == 0 {
                 env.events().publish(
-                    (symbol_short!("FREEZE"), asset_code, issuer, target),
+                    (symbol_short!("FREEZE"), asset_code.clone(), issuer, target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
+                Self::remove_active_proposal_key(&env, &asset_code, &target, false);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1064,7 +1141,7 @@ impl FreezeGovernance {
             }
             None => {
                 Self::check_and_update_cooldown(&env, &target)?;
-                FreezeProposal {
+                let p = FreezeProposal {
                     asset_code: asset_code.clone(),
                     issuer: issuer.clone(),
                     target: target.clone(),
@@ -1077,7 +1154,9 @@ impl FreezeGovernance {
                     reason_code: 0,
                     timelock_until: 0,
                     discussion_uri: String::from_str(&env, ""),
-                }
+                };
+                Self::add_active_proposal_key(&env, &asset_code, &target, true);
+                p
             }
         };
 
@@ -1110,10 +1189,11 @@ impl FreezeGovernance {
                     (valid_votes, seq),
                 );
                 env.events().publish(
-                    (symbol_short!("UNFREEZ"), asset_code, issuer, target),
+                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer, target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
+                Self::remove_active_proposal_key(&env, &asset_code, &target, true);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1123,10 +1203,11 @@ impl FreezeGovernance {
                 );
             } else if timelock_delay == 0 {
                 env.events().publish(
-                    (symbol_short!("UNFREEZ"), asset_code, issuer, target),
+                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer, target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
+                Self::remove_active_proposal_key(&env, &asset_code, &target, true);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1194,7 +1275,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: FreezeProposal = env
             .storage()
             .temporary()
@@ -1207,6 +1288,7 @@ impl FreezeGovernance {
         }
 
         env.storage().temporary().remove(&proposal_key);
+        Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
         Ok(())
     }
 
@@ -1234,7 +1316,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix.clone(), asset_code, target.clone());
+        let proposal_key = (prefix.clone(), asset_code.clone(), target.clone());
         let proposal: FreezeProposal = env
             .storage()
             .temporary()
@@ -1246,6 +1328,7 @@ impl FreezeGovernance {
         }
 
         env.storage().temporary().remove(&proposal_key);
+        Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
         env.events().publish((symbol_short!("CANCEL"), prefix, target), caller);
         Ok(())
     }
@@ -1275,7 +1358,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         if !env.storage().temporary().has(&proposal_key) {
             return Err(Error::ProposalNotFound);
         }
@@ -1305,7 +1388,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         env.storage().temporary().has(&proposal_key)
     }
 
@@ -1321,7 +1404,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.created_timestamp).unwrap_or(0)
     }
@@ -1338,7 +1421,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         match proposal {
             None => ProposalStatus::None,
@@ -1369,7 +1452,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.timelock_until).unwrap_or(0)
     }
@@ -1386,7 +1469,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         let admins = Self::get_admins(env.clone());
         let quorum = Self::get_quorum(env.clone());
@@ -1430,10 +1513,11 @@ impl FreezeGovernance {
 
         let seq = Self::next_action_sequence(&env);
         env.events().publish(
-            (symbol_short!("FREEZE"), asset_code, proposal.issuer, target),
+            (symbol_short!("FREEZE"), asset_code.clone(), proposal.issuer, target.clone()),
             (proposal.votes.len(), proposal.created_ledger, seq),
         );
         env.storage().temporary().remove(&proposal_key);
+        Self::remove_active_proposal_key(&env, &asset_code, &target, false);
         Ok(())
     }
 
@@ -1464,10 +1548,11 @@ impl FreezeGovernance {
 
         let seq = Self::next_action_sequence(&env);
         env.events().publish(
-            (symbol_short!("UNFREEZ"), asset_code, proposal.issuer, target),
+            (symbol_short!("UNFREEZ"), asset_code.clone(), proposal.issuer, target.clone()),
             (proposal.votes.len(), proposal.created_ledger, seq),
         );
         env.storage().temporary().remove(&proposal_key);
+        Self::remove_active_proposal_key(&env, &asset_code, &target, true);
         Ok(())
     }
 
@@ -1490,7 +1575,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.discussion_uri).unwrap_or(String::from_str(&env, ""))
     }
@@ -1525,7 +1610,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let mut proposal: FreezeProposal = env
             .storage()
             .temporary()
@@ -1596,6 +1681,7 @@ impl FreezeGovernance {
 
         if max_possible_votes < quorum {
             env.storage().temporary().remove(&proposal_key);
+            Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
             env.events().publish(
                 (symbol_short!("REJECTED"), prefix, target),
                 neg_count,
@@ -1622,7 +1708,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.negative_votes.len()).unwrap_or(0)
     }
@@ -1639,7 +1725,7 @@ impl FreezeGovernance {
         } else {
             symbol_short!("FRZ")
         };
-        let proposal_key = (prefix, asset_code, target);
+        let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
         proposal.map(|p| p.votes).unwrap_or(Vec::new(&env))
     }
@@ -2675,5 +2761,48 @@ mod tests {
             client.get_proposal_discussion_uri(&asset(&env), &target, &false),
             updated_uri
         );
+    }
+
+    #[test]
+    fn test_active_proposal_enumeration_and_pagination() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let t1 = Address::generate(&env);
+        let t2 = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        assert_eq!(client.get_active_proposal_count(), 0);
+
+        // a1 votes on t1 freeze
+        client.vote_freeze(&a1, &asset(&env), &issuer, &t1);
+        assert_eq!(client.get_active_proposal_count(), 1);
+
+        // a1 votes on t2 freeze
+        client.vote_freeze(&a1, &asset(&env), &issuer, &t2);
+        assert_eq!(client.get_active_proposal_count(), 2);
+
+        // Pagination query: offset 0, limit 1
+        let p1 = client.get_active_proposals(&0, &1);
+        assert_eq!(p1.len(), 1);
+        assert_eq!(p1.get(0).unwrap().1, t1);
+
+        // Pagination query: offset 1, limit 1
+        let p2 = client.get_active_proposals(&1, &1);
+        assert_eq!(p2.len(), 1);
+        assert_eq!(p2.get(0).unwrap().1, t2);
+
+        // a2 votes on t1 -> reaches quorum 2 -> executed and removed from active index
+        client.vote_freeze(&a2, &asset(&env), &issuer, &t1);
+        assert_eq!(client.get_active_proposal_count(), 1);
+
+        let remaining = client.get_active_proposals(&0, &10);
+        assert_eq!(remaining.len(), 1);
+        assert_eq!(remaining.get(0).unwrap().1, t2);
     }
 }
