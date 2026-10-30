@@ -3824,4 +3824,54 @@ mod tests {
         assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
         assert!(client.is_account_frozen(&asset(&env), &target));
     }
+
+    #[test]
+    fn test_auditor_compliance_workflow_e2e() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let auditor = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // 1. Admin registers auditor
+        assert_eq!(client.is_auditor(&auditor), false);
+        client.add_auditor(&a1, &auditor);
+        assert!(client.is_auditor(&auditor));
+        assert_eq!(client.get_auditors().len(), 1);
+
+        // 2. Auditor has zero voting authority
+        let vote_attempt = client.try_vote_freeze(&auditor, &asset(&env), &issuer, &target);
+        assert_eq!(vote_attempt, Err(Ok(Error::UnauthorizedFreezeAttempt)));
+
+        // 3. Admin initiates proposal with compliance metadata
+        let evidence = String::from_str(&env, "ipfs://QmOFACIncidentReport2026");
+        client.vote_freeze_with_evidence(&a1, &asset(&env), &issuer, &target, &evidence);
+
+        // 4. Auditor inspects live governance state & proposal evidence
+        let gov_info = client.get_governance_info();
+        assert_eq!(gov_info.admin_count, 2);
+        assert_eq!(gov_info.quorum, 2);
+        assert_eq!(client.get_proposal_evidence(&asset(&env), &target), evidence);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // 5. Multisig quorum completes freeze
+        client.vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert!(client.is_account_frozen(&asset(&env), &target));
+
+        // 6. Auditor verifies frozen registry query
+        assert_eq!(client.get_frozen_accounts_count(), 1);
+        let frozen_list = client.get_frozen_accounts(&0, &10);
+        assert_eq!(frozen_list.len(), 1);
+
+        // 7. Admin removes auditor role
+        client.remove_auditor(&a1, &auditor);
+        assert_eq!(client.is_auditor(&auditor), false);
+        assert_eq!(client.get_auditors().len(), 0);
+    }
 }
