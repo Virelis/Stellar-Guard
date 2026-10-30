@@ -133,6 +133,11 @@ impl FreezeGovernance {
         Ok(())
     }
 
+    /// Keep-alive helper to extend contract instance storage TTL. Callable by any keeper.
+    pub fn extend_instance_ttl(env: Env, threshold: u32, extend_to: u32) {
+        env.storage().instance().extend_ttl(threshold, extend_to);
+    }
+
     /// Upgrade current contract WASM bytecode. Requires admin authority.
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) -> Result<(), Error> {
         caller.require_auth();
@@ -1040,6 +1045,19 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_extend_instance_ttl() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+
+        // Public keeper function can be called without admin credentials
+        client.extend_instance_ttl(&5000, &10000);
     }
 
     #[test]
