@@ -2138,7 +2138,7 @@ impl FreezeGovernance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, Env, String};
+    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, testutils::Events as _, Env, String};
 
     fn asset(env: &Env) -> String {
         String::from_str(env, "RWAUSD")
@@ -3657,5 +3657,34 @@ mod tests {
             assert!(client.is_account_frozen(&code, &target));
             assert_eq!(client.get_proposal_status(&code, &target, &false), ProposalStatus::None);
         }
+    }
+
+    #[test]
+    fn test_custom_event_topic_filter() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Perform proposal and vote
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+
+        let events = env.events().all();
+        assert!(events.len() > 0);
+
+        let mut matched_topics = false;
+        for i in 0..events.len() {
+            let (contract_id, topics, _data) = events.get(i).unwrap();
+            if contract_id == cid && topics.len() > 0 {
+                matched_topics = true;
+            }
+        }
+        assert!(matched_topics);
     }
 }
