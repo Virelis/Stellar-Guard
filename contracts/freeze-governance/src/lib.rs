@@ -8,6 +8,8 @@ use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env, String, Vec,
 };
 
+pub mod cap0077;
+
 pub const DEFAULT_QUORUM: u32 = 3;
 pub const MAX_ADMINS: u32 = 20;
 /// Default Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
@@ -1139,12 +1141,13 @@ impl FreezeGovernance {
                     (valid_votes, seq),
                 );
                 env.events().publish(
-                    (symbol_short!("FREEZE"), asset_code.clone(), issuer, target.clone()),
+                    (symbol_short!("FREEZE"), asset_code.clone(), issuer.clone(), target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, false);
                 Self::mark_account_frozen(&env, &asset_code, &target);
+                let _ = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1154,12 +1157,13 @@ impl FreezeGovernance {
                 );
             } else if timelock_delay == 0 {
                 env.events().publish(
-                    (symbol_short!("FREEZE"), asset_code.clone(), issuer, target.clone()),
+                    (symbol_short!("FREEZE"), asset_code.clone(), issuer.clone(), target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, false);
                 Self::mark_account_frozen(&env, &asset_code, &target);
+                let _ = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1336,12 +1340,13 @@ impl FreezeGovernance {
                     (valid_votes, seq),
                 );
                 env.events().publish(
-                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer, target.clone()),
+                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer.clone(), target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, true);
                 Self::mark_account_unfrozen(&env, &asset_code, &target);
+                let _ = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1351,12 +1356,13 @@ impl FreezeGovernance {
                 );
             } else if timelock_delay == 0 {
                 env.events().publish(
-                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer, target.clone()),
+                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer.clone(), target.clone()),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, true);
                 Self::mark_account_unfrozen(&env, &asset_code, &target);
+                let _ = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1662,12 +1668,13 @@ impl FreezeGovernance {
 
         let seq = Self::next_action_sequence(&env);
         env.events().publish(
-            (symbol_short!("FREEZE"), asset_code.clone(), proposal.issuer, target.clone()),
+            (symbol_short!("FREEZE"), asset_code.clone(), proposal.issuer.clone(), target.clone()),
             (proposal.votes.len(), proposal.created_ledger, seq),
         );
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, false);
         Self::mark_account_frozen(&env, &asset_code, &target);
+        let _ = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &proposal.issuer, &target);
         Ok(())
     }
 
@@ -1698,12 +1705,13 @@ impl FreezeGovernance {
 
         let seq = Self::next_action_sequence(&env);
         env.events().publish(
-            (symbol_short!("UNFREEZ"), asset_code.clone(), proposal.issuer, target.clone()),
+            (symbol_short!("UNFREEZ"), asset_code.clone(), proposal.issuer.clone(), target.clone()),
             (proposal.votes.len(), proposal.created_ledger, seq),
         );
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, true);
         Self::mark_account_unfrozen(&env, &asset_code, &target);
+        let _ = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &proposal.issuer, &target);
         Ok(())
     }
 
@@ -3160,5 +3168,21 @@ mod tests {
                 assert_eq!(client.is_account_frozen(&asset_code, &target), true);
             }
         }
+    }
+
+    #[test]
+    fn test_cap0077_adapter_invocations() {
+        let env = Env::default();
+        let (asset_code, issuer, target) = (
+            String::from_str(&env, "USDC"),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+
+        let res_quarantine = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
+        assert!(res_quarantine.is_ok());
+
+        let res_release = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
+        assert!(res_release.is_ok());
     }
 }
