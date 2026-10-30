@@ -3469,4 +3469,52 @@ mod tests {
         client.revoke_unfreeze_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_unfreeze_votes(&asset(&env), &target), 0);
     }
+
+    #[test]
+    fn test_proposal_exact_boundary_expiration() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Fixed TTL of 50 ledgers
+        client.set_proposal_ttl(&a1, &50);
+
+        // a1 creates proposal at current ledger sequence (e.g. 0)
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // Advance to exact boundary: created_ledger (0) + 50 = 50
+        env.ledger().with_mut(|li| {
+            li.sequence_number = 50;
+        });
+
+        // Still active and valid at exact boundary
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        let prune_premature = client.try_prune_expired(&a1, &asset(&env), &target, &false);
+        assert_eq!(prune_premature, Err(Ok(Error::InvalidParameter)));
+
+        // Advance 1 ledger past boundary: 51
+        env.ledger().with_mut(|li| {
+            li.sequence_number = 51;
+        });
+
+        // Now expired
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Expired);
+
+        // Further voting rejected with ProposalExpired
+        let vote_late = client.try_vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(vote_late, Err(Ok(Error::ProposalExpired)));
+
+        // Pruning now succeeds
+        let prune_ok = client.try_prune_expired(&a1, &asset(&env), &target, &false);
+        assert!(prune_ok.is_ok());
+        assert_eq!(client.has_proposal(&asset(&env), &target, &false), false);
+    }
 }
