@@ -10,6 +10,7 @@ import { auditRouter } from "./routes/audit";
 import { metricsMiddleware } from "./services/metrics";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
+import { requestIdMiddleware } from "./middleware/requestId";
 import { horizonMonitor } from "./services/horizonMonitor";
 
 const app = express();
@@ -19,6 +20,7 @@ const app = express();
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? "http://localhost:3000";
 app.use(cors({ origin: ALLOWED_ORIGIN, methods: ["GET", "POST", "OPTIONS"] }));
 
+app.use(requestIdMiddleware);
 app.use(express.json({ limit: "64kb" }));
 app.use(metricsMiddleware);
 app.use(generalRateLimiter);
