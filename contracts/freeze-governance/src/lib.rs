@@ -9,10 +9,11 @@ use soroban_sdk::{
 };
 
 pub const DEFAULT_QUORUM: u32 = 3;
-/// Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
-pub const PROPOSAL_TTL: u32 = 120_960;
+/// Default Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
+pub const DEFAULT_PROPOSAL_TTL: u32 = 120_960;
 pub const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
 pub const QUORUM_KEY: soroban_sdk::Symbol = symbol_short!("QUORUM");
+pub const TTL_KEY: soroban_sdk::Symbol = symbol_short!("PRP_TTL");
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -44,6 +45,7 @@ pub struct FreezeProposal {
     pub votes: Vec<Address>,
     pub created_ledger: u32,
     pub evidence_hash: String,
+    pub ttl: u32,
 }
 
 #[contract]
@@ -75,12 +77,37 @@ impl FreezeGovernance {
         };
         env.storage().instance().set(&ADMINS_KEY, &admins);
         env.storage().instance().set(&QUORUM_KEY, &q);
+        env.storage().instance().set(&TTL_KEY, &DEFAULT_PROPOSAL_TTL);
         Ok(())
     }
 
     /// Retrieve active quorum requirement.
     pub fn get_quorum(env: Env) -> u32 {
         env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM)
+    }
+
+    /// Retrieve active default proposal TTL in ledgers.
+    pub fn get_proposal_ttl(env: Env) -> u32 {
+        env.storage().instance().get(&TTL_KEY).unwrap_or(DEFAULT_PROPOSAL_TTL)
+    }
+
+    /// Update proposal TTL parameter in ledgers. Requires admin authorization.
+    pub fn set_proposal_ttl(env: Env, caller: Address, new_ttl: u32) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+        if new_ttl == 0 {
+            return Err(Error::InvalidParameter);
+        }
+        env.storage().instance().set(&TTL_KEY, &new_ttl);
+        Ok(())
     }
 
     /// Update quorum requirement. Requires authorized admin caller.
@@ -125,11 +152,12 @@ impl FreezeGovernance {
 
         let proposal_key = (symbol_short!("FRZ"), asset_code.clone(), target.clone());
         let current_ledger = env.ledger().sequence();
+        let active_ttl = Self::get_proposal_ttl(env.clone());
 
         let mut proposal: FreezeProposal = match env.storage().temporary().get(&proposal_key) {
             Some(p) => {
                 let mut p: FreezeProposal = p;
-                if current_ledger > p.created_ledger.saturating_add(PROPOSAL_TTL) {
+                if current_ledger > p.created_ledger.saturating_add(p.ttl) {
                     return Err(Error::ProposalExpired);
                 }
                 if p.evidence_hash.len() == 0 && evidence_hash.len() > 0 {
@@ -144,6 +172,7 @@ impl FreezeGovernance {
                 votes: Vec::new(&env),
                 created_ledger: current_ledger,
                 evidence_hash,
+                ttl: active_ttl,
             },
         };
 
@@ -165,7 +194,7 @@ impl FreezeGovernance {
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
                 .temporary()
-                .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
+                .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
         }
 
         Ok(vote_count)
@@ -207,11 +236,12 @@ impl FreezeGovernance {
 
         let proposal_key = (symbol_short!("UNFRZ"), asset_code.clone(), target.clone());
         let current_ledger = env.ledger().sequence();
+        let active_ttl = Self::get_proposal_ttl(env.clone());
 
         let mut proposal: FreezeProposal = match env.storage().temporary().get(&proposal_key) {
             Some(p) => {
                 let p: FreezeProposal = p;
-                if current_ledger > p.created_ledger.saturating_add(PROPOSAL_TTL) {
+                if current_ledger > p.created_ledger.saturating_add(p.ttl) {
                     return Err(Error::ProposalExpired);
                 }
                 p
@@ -223,6 +253,7 @@ impl FreezeGovernance {
                 votes: Vec::new(&env),
                 created_ledger: current_ledger,
                 evidence_hash: String::from_str(&env, ""),
+                ttl: active_ttl,
             },
         };
 
@@ -244,7 +275,7 @@ impl FreezeGovernance {
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
                 .temporary()
-                .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
+                .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
         }
 
         Ok(vote_count)
@@ -284,7 +315,7 @@ impl FreezeGovernance {
         env.storage().temporary().set(&proposal_key, &proposal);
         env.storage()
             .temporary()
-            .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
+            .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
         Ok(())
     }
 
@@ -310,7 +341,7 @@ impl FreezeGovernance {
             .ok_or(Error::ProposalNotFound)?;
 
         let current_ledger = env.ledger().sequence();
-        if current_ledger <= proposal.created_ledger.saturating_add(PROPOSAL_TTL) {
+        if current_ledger <= proposal.created_ledger.saturating_add(proposal.ttl) {
             return Err(Error::InvalidParameter);
         }
 
@@ -430,6 +461,21 @@ mod tests {
     }
 
     #[test]
+    fn test_configurable_ttl() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        assert_eq!(client.get_proposal_ttl(), DEFAULT_PROPOSAL_TTL);
+        client.set_proposal_ttl(&a1, &5000);
+        assert_eq!(client.get_proposal_ttl(), 5000);
+    }
+
+    #[test]
     fn test_proposal_with_evidence_hash() {
         let env = Env::default();
         let cid = env.register_contract(None, FreezeGovernance);
@@ -488,7 +534,7 @@ mod tests {
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
 
         env.ledger().with_mut(|li| {
-            li.sequence_number += PROPOSAL_TTL + 10;
+            li.sequence_number += DEFAULT_PROPOSAL_TTL + 10;
         });
 
         let res = client.try_vote_freeze(&a2, &asset(&env), &issuer, &target);
