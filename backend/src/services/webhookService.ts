@@ -65,3 +65,16 @@ export function deleteWebhook(id: number): boolean {
   const result = db.prepare(`DELETE FROM webhooks WHERE id = ?`).run(id);
   return Number(result.changes) > 0;
 }
+
+
+export function rotateWebhookSecret(id: number, customSecret?: string): { id: number; oldSecret: string; newSecret: string } | null {
+  const db = getDb();
+  const existing = db.prepare(`SELECT secret FROM webhooks WHERE id = ?`).get(id) as { secret: string } | undefined;
+  if (!existing) return null;
+
+  const oldSecret = existing.secret;
+  const newSecret = customSecret && customSecret.length >= 16 ? customSecret : crypto.randomBytes(24).toString("hex");
+
+  db.prepare(`UPDATE webhooks SET secret = ? WHERE id = ?`).run(newSecret, id);
+  return { id, oldSecret, newSecret };
+}

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { registerWebhook, listWebhooks, deleteWebhook } from "../services/webhookService";
+import { registerWebhook, listWebhooks, deleteWebhook, rotateWebhookSecret } from "../services/webhookService";
 
 export const webhooksRouter = Router();
 
@@ -36,6 +36,29 @@ webhooksRouter.post("/", (req: Request, res: Response) => {
     success: true,
     message: "Webhook registered successfully. Secure your secret for signature verification.",
     webhook: hook,
+  });
+});
+
+webhooksRouter.post("/:id/rotate-secret", (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid webhook ID" });
+    return;
+  }
+
+  const customSecret = typeof req.body?.newSecret === "string" ? req.body.newSecret : undefined;
+  const result = rotateWebhookSecret(id, customSecret);
+
+  if (!result) {
+    res.status(404).json({ error: "Webhook not found" });
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Secret rotated for webhook #${id}. Update your subscriber endpoint verification.`,
+    webhookId: id,
+    newSecret: result.newSecret,
   });
 });
 
