@@ -39,6 +39,15 @@ pub enum Error {
 }
 
 #[contracttype]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum ProposalStatus {
+    None = 0,
+    Active = 1,
+    Expired = 2,
+}
+
+#[contracttype]
 #[derive(Clone)]
 pub struct FreezeProposal {
     pub asset_code: String,
@@ -600,6 +609,33 @@ impl FreezeGovernance {
         proposal.map(|p| p.votes.len()).unwrap_or(0)
     }
 
+    /// Return the lifecycle status of a proposal (None, Active, Expired).
+    pub fn get_proposal_status(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> ProposalStatus {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        match proposal {
+            None => ProposalStatus::None,
+            Some(p) => {
+                let current_ledger = env.ledger().sequence();
+                if current_ledger > p.created_ledger.saturating_add(p.ttl) {
+                    ProposalStatus::Expired
+                } else {
+                    ProposalStatus::Active
+                }
+            }
+        }
+    }
+
     /// Return attached evidence metadata hash if present.
     pub fn get_proposal_evidence(env: Env, asset_code: String, target: Address) -> String {
         let key = (symbol_short!("FRZ"), asset_code, target);
@@ -939,6 +975,34 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_proposal_status_query() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let a2 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // Non-existent proposal has status None
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+
+        // Created proposal has status Active
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+
+        // After TTL passes, status is Expired
+        env.ledger().with_mut(|li| {
+            li.sequence_number += DEFAULT_PROPOSAL_TTL + 10;
+        });
+        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Expired);
     }
 
     #[test]
