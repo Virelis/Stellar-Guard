@@ -1451,6 +1451,48 @@ impl FreezeGovernance {
         Ok(())
     }
 
+    /// Revoke a previously cast vote for an unfreeze proposal.
+    pub fn revoke_unfreeze_vote(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+
+        let proposal_key = (symbol_short!("UNFRZ"), asset_code, target.clone());
+        let mut proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..proposal.votes.len() {
+            if proposal.votes.get(i).unwrap() == caller {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
+
+        if !found {
+            return Err(Error::ProposalNotFound);
+        }
+
+        proposal.votes.remove(idx);
+        env.storage().temporary().set(&proposal_key, &proposal);
+        env.storage()
+            .temporary()
+            .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
+        env.events().publish(
+            (symbol_short!("REVOKE"), symbol_short!("UNFRZ"), target),
+            caller,
+        );
+        Ok(())
+    }
+
     /// Prune an expired proposal to reclaim storage state.
     pub fn prune_expired(
         env: Env,
@@ -3395,5 +3437,27 @@ mod tests {
         assert_eq!(client.get_active_proposal_count(), 0);
         assert_eq!(client.has_proposal(&asset(&env), &t1, &false), false);
         assert_eq!(client.has_proposal(&asset(&env), &t2, &false), false);
+    }
+
+    #[test]
+    fn test_revoke_unfreeze_vote() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // a1 votes on unfreeze
+        client.vote_unfreeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_unfreeze_votes(&asset(&env), &target), 1);
+
+        // a1 revokes unfreeze vote
+        client.revoke_unfreeze_vote(&a1, &asset(&env), &target);
+        assert_eq!(client.get_unfreeze_votes(&asset(&env), &target), 0);
     }
 }
