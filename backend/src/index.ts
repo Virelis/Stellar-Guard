@@ -12,6 +12,7 @@ import { networkRouter } from "./routes/network";
 import { backupRouter } from "./routes/backup";
 import { syncRouter } from "./routes/sync";
 import { analyticsRouter } from "./routes/analytics";
+import { capabilitiesRouter } from "./routes/capabilities";
 import { metricsMiddleware } from "./services/metrics";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
@@ -39,6 +40,7 @@ app.use("/api/network", networkRouter);
 app.use("/api/admin/backup", backupRouter);
 app.use("/api/sync", syncRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/config", capabilitiesRouter);
 
 app.use(errorHandler);
 
