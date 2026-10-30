@@ -1150,7 +1150,7 @@ impl FreezeGovernance {
             }
         };
 
-        if proposal.votes.contains(&caller) {
+        if proposal.votes.contains(&caller) || proposal.negative_votes.contains(&caller) {
             return Err(Error::AlreadyVoted);
         }
 
@@ -1349,7 +1349,7 @@ impl FreezeGovernance {
             }
         };
 
-        if proposal.votes.contains(&caller) {
+        if proposal.votes.contains(&caller) || proposal.negative_votes.contains(&caller) {
             return Err(Error::AlreadyVoted);
         }
 
@@ -1494,6 +1494,59 @@ impl FreezeGovernance {
             caller,
         );
         Ok(())
+    }
+
+    /// Revoke a previously cast negative vote against a freeze or unfreeze proposal.
+    pub fn revoke_negative_vote(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> Result<u32, Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&ADMINS_KEY).unwrap();
+        if !admins.contains(&caller) {
+            return Err(Error::UnauthorizedFreezeAttempt);
+        }
+
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix.clone(), asset_code, target.clone());
+        let mut proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        let mut found = false;
+        let mut idx = 0u32;
+        for i in 0..proposal.negative_votes.len() {
+            if proposal.negative_votes.get(i).unwrap() == caller {
+                found = true;
+                idx = i;
+                break;
+            }
+        }
+
+        if !found {
+            return Err(Error::ProposalNotFound);
+        }
+
+        proposal.negative_votes.remove(idx);
+        let rem_count = proposal.negative_votes.len();
+        env.storage().temporary().set(&proposal_key, &proposal);
+        env.storage()
+            .temporary()
+            .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
+        env.events().publish(
+            (symbol_short!("REVOK_NO"), prefix, target),
+            caller,
+        );
+        Ok(rem_count)
     }
 
     /// Prune an expired proposal to reclaim storage state.
@@ -1933,7 +1986,7 @@ impl FreezeGovernance {
             .get(&proposal_key)
             .ok_or(Error::ProposalNotFound)?;
 
-        if proposal.negative_votes.contains(&caller) {
+        if proposal.negative_votes.contains(&caller) || proposal.votes.contains(&caller) {
             return Err(Error::AlreadyVoted);
         }
 
@@ -3516,5 +3569,48 @@ mod tests {
         let prune_ok = client.try_prune_expired(&a1, &asset(&env), &target, &false);
         assert!(prune_ok.is_ok());
         assert_eq!(client.has_proposal(&asset(&env), &target, &false), false);
+    }
+
+    #[test]
+    fn test_cross_vote_mutual_exclusion_and_revoke_negative_vote() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2, a3) = (
+            Address::generate(&env),
+            Address::generate(&env),
+            Address::generate(&env),
+        );
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        // a1 proposes freeze (and votes YES)
+        client.vote_freeze(&a1, &asset(&env), &issuer, &target);
+        assert_eq!(client.get_votes(&asset(&env), &target), 1);
+
+        // a1 cannot vote NO (AlreadyVoted)
+        let a1_vote_no = client.try_vote_against(&a1, &asset(&env), &target, &false);
+        assert_eq!(a1_vote_no, Err(Ok(Error::AlreadyVoted)));
+
+        // a2 votes NO
+        assert_eq!(client.vote_against(&a2, &asset(&env), &target, &false), 1);
+        assert_eq!(client.get_negative_votes(&asset(&env), &target, &false), 1);
+
+        // a2 cannot now vote YES (AlreadyVoted)
+        let a2_vote_yes = client.try_vote_freeze(&a2, &asset(&env), &issuer, &target);
+        assert_eq!(a2_vote_yes, Err(Ok(Error::AlreadyVoted)));
+
+        // a2 revokes their negative vote
+        let rem_neg = client.revoke_negative_vote(&a2, &asset(&env), &target, &false);
+        assert_eq!(rem_neg, 0);
+        assert_eq!(client.get_negative_votes(&asset(&env), &target, &false), 0);
+
+        // Now a2 can cast affirmative vote YES, reaching quorum!
+        assert_eq!(client.vote_freeze(&a2, &asset(&env), &issuer, &target), 2);
+        assert!(client.is_account_frozen(&asset(&env), &target));
     }
 }
