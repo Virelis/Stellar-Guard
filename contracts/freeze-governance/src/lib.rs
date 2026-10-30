@@ -9,6 +9,7 @@ use soroban_sdk::{
 };
 
 pub const DEFAULT_QUORUM: u32 = 3;
+pub const MAX_ADMINS: u32 = 20;
 /// Default Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
 pub const DEFAULT_PROPOSAL_TTL: u32 = 120_960;
 pub const ADMINS_KEY: soroban_sdk::Symbol = symbol_short!("ADMINS");
@@ -1248,6 +1249,9 @@ impl FreezeGovernance {
         if admins.contains(&new_admin) {
             return Err(Error::AdminAlreadyExists);
         }
+        if admins.len() >= MAX_ADMINS {
+            return Err(Error::InvalidParameter);
+        }
         admins.push_back(new_admin.clone());
         env.storage().instance().set(&ADMINS_KEY, &admins);
         env.events().publish((symbol_short!("ADMIN"), symbol_short!("ADD")), new_admin);
@@ -1558,6 +1562,29 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_max_admins_cap() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let initial_admin = Address::generate(&env);
+        client.init(&Vec::from_array(&env, [initial_admin.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        // Add up to MAX_ADMINS (20)
+        for _ in 1..MAX_ADMINS {
+            let next_admin = Address::generate(&env);
+            client.add_admin(&initial_admin, &next_admin);
+        }
+        assert_eq!(client.get_admin_count(), MAX_ADMINS);
+
+        // Exceeding MAX_ADMINS fails with InvalidParameter
+        let overflow_admin = Address::generate(&env);
+        let err = client.try_add_admin(&initial_admin, &overflow_admin);
+        assert_eq!(err, Err(Ok(Error::InvalidParameter)));
     }
 
     #[test]
