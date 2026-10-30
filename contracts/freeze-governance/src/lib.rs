@@ -84,6 +84,7 @@ pub struct FreezeProposal {
     pub created_timestamp: u64,
     pub reason_code: u32,
     pub timelock_until: u64,
+    pub discussion_uri: String,
 }
 
 #[contract]
@@ -647,6 +648,7 @@ impl FreezeGovernance {
                 created_timestamp: env.ledger().timestamp(),
                 reason_code: 0,
                 timelock_until: 0,
+                discussion_uri: String::from_str(&env, ""),
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -715,6 +717,77 @@ impl FreezeGovernance {
                 created_timestamp: env.ledger().timestamp(),
                 reason_code,
                 timelock_until: 0,
+                discussion_uri: String::from_str(&env, ""),
+            };
+            env.storage().temporary().set(&proposal_key, &proposal);
+            env.storage()
+                .temporary()
+                .extend_ttl(&proposal_key, active_ttl, active_ttl);
+            env.events().publish(
+                (symbol_short!("PROPOSE"), asset_code, issuer, target),
+                (caller, reason_code),
+            );
+        }
+        Ok(())
+    }
+
+    /// Propose a freeze action specifying reason category and incident discussion / case URI.
+    pub fn propose_freeze_with_metadata(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        issuer: Address,
+        target: Address,
+        evidence_hash: String,
+        reason_code: u32,
+        discussion_uri: String,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
+        Self::validate_asset_code(&asset_code)?;
+        if target == issuer {
+            return Err(Error::SelfFreezeNotAllowed);
+        }
+        if Self::is_whitelisted(env.clone(), target.clone()) {
+            return Err(Error::InvalidParameter);
+        }
+
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+        let proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !admins.contains(&caller) && !proposers.contains(&caller) {
+            return Err(Error::UnauthorizedCaller);
+        }
+
+        let proposal_key = (symbol_short!("FRZ"), asset_code.clone(), target.clone());
+        let current_ledger = env.ledger().sequence();
+        let active_ttl = Self::get_proposal_ttl(env.clone());
+
+        if !env.storage().temporary().has(&proposal_key) {
+            Self::check_and_update_cooldown(&env, &target)?;
+            let proposal = FreezeProposal {
+                asset_code: asset_code.clone(),
+                issuer: issuer.clone(),
+                target: target.clone(),
+                votes: Vec::new(&env),
+                created_ledger: current_ledger,
+                evidence_hash,
+                ttl: active_ttl,
+                negative_votes: Vec::new(&env),
+                created_timestamp: env.ledger().timestamp(),
+                reason_code,
+                timelock_until: 0,
+                discussion_uri,
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -815,6 +888,7 @@ impl FreezeGovernance {
                     created_timestamp: env.ledger().timestamp(),
                     reason_code: 0,
                     timelock_until: 0,
+                    discussion_uri: String::from_str(&env, ""),
                 }
             }
         };
@@ -1002,6 +1076,7 @@ impl FreezeGovernance {
                     created_timestamp: env.ledger().timestamp(),
                     reason_code: 0,
                     timelock_until: 0,
+                    discussion_uri: String::from_str(&env, ""),
                 }
             }
         };
@@ -1401,6 +1476,65 @@ impl FreezeGovernance {
         let key = (symbol_short!("FRZ"), asset_code, target);
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&key);
         proposal.map(|p| p.evidence_hash).unwrap_or(String::from_str(&env, ""))
+    }
+
+    /// Return incident discussion thread / ticket URI attached to proposal.
+    pub fn get_proposal_discussion_uri(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> String {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        proposal.map(|p| p.discussion_uri).unwrap_or(String::from_str(&env, ""))
+    }
+
+    /// Update or attach a discussion/ticket URI to an active proposal.
+    pub fn update_proposal_discussion_uri(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+        discussion_uri: String,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+        let proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !admins.contains(&caller) && !proposers.contains(&caller) {
+            return Err(Error::UnauthorizedCaller);
+        }
+
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let mut proposal: FreezeProposal = env
+            .storage()
+            .temporary()
+            .get(&proposal_key)
+            .ok_or(Error::ProposalNotFound)?;
+
+        proposal.discussion_uri = discussion_uri;
+        env.storage().temporary().set(&proposal_key, &proposal);
+        Ok(())
     }
 
     /// Return current vote count for an unfreeze proposal (0 if none or expired).
@@ -2500,5 +2634,46 @@ mod tests {
         // a1 removes a2 -> count increments to 2
         client.remove_admin(&a1, &a2);
         assert_eq!(client.get_admin_change_count(), 2);
+    }
+
+    #[test]
+    fn test_proposal_discussion_uri_metadata() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        let initial_uri = String::from_str(&env, "https://jira.institution.com/browse/SEC-9921");
+        let hash = String::from_str(&env, "bafybeic567...");
+
+        client.propose_freeze_with_metadata(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &target,
+            &hash,
+            &(ReasonCode::AmlSuspiciousActivity as u32),
+            &initial_uri,
+        );
+
+        assert_eq!(
+            client.get_proposal_discussion_uri(&asset(&env), &target, &false),
+            initial_uri
+        );
+
+        // Update discussion URI with new investigative findings link
+        let updated_uri = String::from_str(&env, "https://discussions.stellar.org/t/incident-4491/2");
+        client.update_proposal_discussion_uri(&a1, &asset(&env), &target, &false, &updated_uri);
+
+        assert_eq!(
+            client.get_proposal_discussion_uri(&asset(&env), &target, &false),
+            updated_uri
+        );
     }
 }
