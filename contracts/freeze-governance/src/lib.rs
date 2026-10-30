@@ -43,6 +43,7 @@ pub struct FreezeProposal {
     pub target: Address,
     pub votes: Vec<Address>,
     pub created_ledger: u32,
+    pub evidence_hash: String,
 }
 
 #[contract]
@@ -101,14 +102,14 @@ impl FreezeGovernance {
         Ok(())
     }
 
-    /// Cast a vote to freeze `target`'s `asset_code` balance.
-    /// Returns the current vote count. Emits FREEZE event at quorum.
-    pub fn vote_freeze(
+    /// Cast a vote to freeze `target`'s `asset_code` balance with attached evidence hash.
+    pub fn vote_freeze_with_evidence(
         env: Env,
         caller: Address,
         asset_code: String,
         issuer: Address,
         target: Address,
+        evidence_hash: String,
     ) -> Result<u32, Error> {
         caller.require_auth();
 
@@ -127,9 +128,12 @@ impl FreezeGovernance {
 
         let mut proposal: FreezeProposal = match env.storage().temporary().get(&proposal_key) {
             Some(p) => {
-                let p: FreezeProposal = p;
+                let mut p: FreezeProposal = p;
                 if current_ledger > p.created_ledger.saturating_add(PROPOSAL_TTL) {
                     return Err(Error::ProposalExpired);
+                }
+                if p.evidence_hash.len() == 0 && evidence_hash.len() > 0 {
+                    p.evidence_hash = evidence_hash;
                 }
                 p
             }
@@ -139,6 +143,7 @@ impl FreezeGovernance {
                 target: target.clone(),
                 votes: Vec::new(&env),
                 created_ledger: current_ledger,
+                evidence_hash,
             },
         };
 
@@ -164,6 +169,19 @@ impl FreezeGovernance {
         }
 
         Ok(vote_count)
+    }
+
+    /// Cast a vote to freeze `target`'s `asset_code` balance.
+    /// Returns the current vote count. Emits FREEZE event at quorum.
+    pub fn vote_freeze(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        issuer: Address,
+        target: Address,
+    ) -> Result<u32, Error> {
+        let empty_evidence = String::from_str(&env, "");
+        Self::vote_freeze_with_evidence(env, caller, asset_code, issuer, target, empty_evidence)
     }
 
     /// Cast a vote to unfreeze `target`'s `asset_code` balance.
@@ -204,6 +222,7 @@ impl FreezeGovernance {
                 target: target.clone(),
                 votes: Vec::new(&env),
                 created_ledger: current_ledger,
+                evidence_hash: String::from_str(&env, ""),
             },
         };
 
@@ -306,6 +325,13 @@ impl FreezeGovernance {
         proposal.map(|p| p.votes.len()).unwrap_or(0)
     }
 
+    /// Return attached evidence metadata hash if present.
+    pub fn get_proposal_evidence(env: Env, asset_code: String, target: Address) -> String {
+        let key = (symbol_short!("FRZ"), asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&key);
+        proposal.map(|p| p.evidence_hash).unwrap_or(String::from_str(&env, ""))
+    }
+
     /// Return current vote count for an unfreeze proposal (0 if none or expired).
     pub fn get_unfreeze_votes(env: Env, asset_code: String, target: Address) -> u32 {
         let key = (symbol_short!("UNFRZ"), asset_code, target);
@@ -404,6 +430,25 @@ mod tests {
     }
 
     #[test]
+    fn test_proposal_with_evidence_hash() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let (a1, a2) = (Address::generate(&env), Address::generate(&env));
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+        let cid_hash = String::from_str(&env, "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi");
+
+        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
+        env.mock_all_auths();
+
+        client.vote_freeze_with_evidence(&a1, &asset(&env), &issuer, &target, &cid_hash);
+        assert_eq!(client.get_votes(&asset(&env), &target), 1);
+        assert_eq!(client.get_proposal_evidence(&asset(&env), &target), cid_hash);
+    }
+
+    #[test]
     fn test_unfreeze_flow() {
         let env = Env::default();
         let cid = env.register_contract(None, FreezeGovernance);
@@ -442,16 +487,13 @@ mod tests {
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
 
-        // Advance ledger beyond PROPOSAL_TTL
         env.ledger().with_mut(|li| {
             li.sequence_number += PROPOSAL_TTL + 10;
         });
 
-        // Voting on expired proposal is rejected
         let res = client.try_vote_freeze(&a2, &asset(&env), &issuer, &target);
         assert_eq!(res, Err(Ok(Error::ProposalExpired)));
 
-        // Prune the expired proposal
         client.prune_expired(&a1, &asset(&env), &target, &false);
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
     }
