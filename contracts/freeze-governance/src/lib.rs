@@ -51,6 +51,18 @@ pub enum ProposalStatus {
 }
 
 #[contracttype]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum ReasonCode {
+    Unspecified = 0,
+    OfacSanctions = 1,
+    CompromisedKey = 2,
+    CourtOrder = 3,
+    AmlSuspiciousActivity = 4,
+    ContractExploit = 5,
+}
+
+#[contracttype]
 #[derive(Clone)]
 pub struct FreezeProposal {
     pub asset_code: String,
@@ -62,6 +74,7 @@ pub struct FreezeProposal {
     pub ttl: u32,
     pub negative_votes: Vec<Address>,
     pub created_timestamp: u64,
+    pub reason_code: u32,
 }
 
 #[contract]
@@ -544,6 +557,7 @@ impl FreezeGovernance {
                 ttl: active_ttl,
                 negative_votes: Vec::new(&env),
                 created_timestamp: env.ledger().timestamp(),
+                reason_code: 0,
             };
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -555,6 +569,89 @@ impl FreezeGovernance {
             );
         }
         Ok(())
+    }
+
+    /// Propose a freeze action specifying a standardized reason category code.
+    pub fn propose_freeze_with_category(
+        env: Env,
+        caller: Address,
+        asset_code: String,
+        issuer: Address,
+        target: Address,
+        evidence_hash: String,
+        reason_code: u32,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
+        Self::validate_asset_code(&asset_code)?;
+        if target == issuer {
+            return Err(Error::SelfFreezeNotAllowed);
+        }
+        if Self::is_whitelisted(env.clone(), target.clone()) {
+            return Err(Error::InvalidParameter);
+        }
+
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&ADMINS_KEY)
+            .ok_or(Error::UnauthorizedFreezeAttempt)?;
+        let proposers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&PROPOSERS_KEY)
+            .unwrap_or(Vec::new(&env));
+
+        if !admins.contains(&caller) && !proposers.contains(&caller) {
+            return Err(Error::UnauthorizedCaller);
+        }
+
+        let proposal_key = (symbol_short!("FRZ"), asset_code.clone(), target.clone());
+        let current_ledger = env.ledger().sequence();
+        let active_ttl = Self::get_proposal_ttl(env.clone());
+
+        if !env.storage().temporary().has(&proposal_key) {
+            let proposal = FreezeProposal {
+                asset_code: asset_code.clone(),
+                issuer: issuer.clone(),
+                target: target.clone(),
+                votes: Vec::new(&env),
+                created_ledger: current_ledger,
+                evidence_hash,
+                ttl: active_ttl,
+                negative_votes: Vec::new(&env),
+                created_timestamp: env.ledger().timestamp(),
+                reason_code,
+            };
+            env.storage().temporary().set(&proposal_key, &proposal);
+            env.storage()
+                .temporary()
+                .extend_ttl(&proposal_key, active_ttl, active_ttl);
+            env.events().publish(
+                (symbol_short!("PROPOSE"), asset_code, issuer, target),
+                (caller, reason_code),
+            );
+        }
+        Ok(())
+    }
+
+    /// Return the standardized reason code classification for a proposal.
+    pub fn get_proposal_reason_code(
+        env: Env,
+        asset_code: String,
+        target: Address,
+        is_unfreeze: bool,
+    ) -> u32 {
+        let prefix = if is_unfreeze {
+            symbol_short!("UNFRZ")
+        } else {
+            symbol_short!("FRZ")
+        };
+        let proposal_key = (prefix, asset_code, target);
+        let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
+        proposal.map(|p| p.reason_code).unwrap_or(0)
     }
 
     /// Cast a vote to freeze `target`'s `asset_code` balance with attached evidence hash.
@@ -623,6 +720,7 @@ impl FreezeGovernance {
                 ttl: active_ttl,
                 negative_votes: Vec::new(&env),
                 created_timestamp: env.ledger().timestamp(),
+                reason_code: 0,
             },
         };
 
@@ -754,6 +852,7 @@ impl FreezeGovernance {
                 ttl: active_ttl,
                 negative_votes: Vec::new(&env),
                 created_timestamp: env.ledger().timestamp(),
+                reason_code: 0,
             },
         };
 
@@ -1459,6 +1558,34 @@ mod tests {
 
         client.revoke_vote(&a1, &asset(&env), &target);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
+    }
+
+    #[test]
+    fn test_proposal_reason_code() {
+        let env = Env::default();
+        let cid = env.register_contract(None, FreezeGovernance);
+        let client = FreezeGovernanceClient::new(&env, &cid);
+
+        let a1 = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let target = Address::generate(&env);
+
+        client.init(&Vec::from_array(&env, [a1.clone()]), &Some(1));
+        env.mock_all_auths();
+
+        client.propose_freeze_with_category(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &target,
+            &String::from_str(&env, "ofac_sdn_list"),
+            &(ReasonCode::OfacSanctions as u32),
+        );
+
+        assert_eq!(
+            client.get_proposal_reason_code(&asset(&env), &target, &false),
+            ReasonCode::OfacSanctions as u32
+        );
     }
 
     #[test]
