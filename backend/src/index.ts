@@ -4,6 +4,7 @@ import cors from "cors";
 import { transfersRouter } from "./routes/transfers";
 import { freezeRouter } from "./routes/freeze";
 import { healthRouter } from "./routes/health";
+import { eventsRouter } from "./routes/events";
 import { metricsMiddleware } from "./services/metrics";
 import { generalRateLimiter } from "./middleware/rateLimiter";
 import { horizonMonitor } from "./services/horizonMonitor";
@@ -22,6 +23,7 @@ app.use(generalRateLimiter);
 app.use(healthRouter);
 app.use("/api/transfers", transfersRouter);
 app.use("/api/freeze", freezeRouter);
+app.use("/api/events", eventsRouter);
 
 if (require.main === module) {
   const PORT = process.env.PORT ?? 4000;
