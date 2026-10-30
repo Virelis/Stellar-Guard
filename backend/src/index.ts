@@ -8,6 +8,7 @@ import { eventsRouter } from "./routes/events";
 import { xdrRouter } from "./routes/xdr";
 import { auditRouter } from "./routes/audit";
 import { metricsMiddleware } from "./services/metrics";
+import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
 import { horizonMonitor } from "./services/horizonMonitor";
 
@@ -28,6 +29,8 @@ app.use("/api/freeze", freezeRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/xdr", xdrRouter);
 app.use("/api/audit", auditRouter);
+
+app.use(errorHandler);
 
 if (require.main === module) {
   const PORT = process.env.PORT ?? 4000;
