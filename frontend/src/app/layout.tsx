@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Stellar-Guard | CAP-0077 Command Center",
@@ -12,12 +13,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme');if(t!=='light')document.documentElement.classList.add('dark')})()`,
+            __html: `(function(){var t=localStorage.getItem('stellar_guard_theme')||localStorage.getItem('theme');if(t!=='light')document.documentElement.classList.add('dark')})()`,
           }}
         />
       </head>
       <body className="bg-white dark:bg-stellar-dark text-gray-900 dark:text-white min-h-screen">
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
