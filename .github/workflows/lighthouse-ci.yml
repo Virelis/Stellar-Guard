@@ -1,0 +1,36 @@
+name: Lighthouse CI Performance & Accessibility Audit
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/lighthouse-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/lighthouse-ci.yml"
+
+jobs:
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build --workspace=@stellar-guard/types
+          cd frontend
+          npm run build
+
+      - name: Run Lighthouse CI
+        run: |
+          npx @lhci/cli@0.14.x autorun --collect.staticDistDir=frontend/.next || true
