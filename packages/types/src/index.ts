@@ -106,5 +106,7 @@ export interface WebhookRegistration {
 
 export * from "./errors";
 export * from "./stellar";
+export * from "./governance";
+
 
 
