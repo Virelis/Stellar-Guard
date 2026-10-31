@@ -1,0 +1,47 @@
+name: 🚀 Feature Request / Protocol RFC
+description: Propose a new feature, CAP integration, or architecture improvement for Stellar-Guard
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome architectural proposals, SEP/CAP integrations, and security feature suggestions!
+  - type: input
+    id: title_summary
+    attributes:
+      label: Feature Summary
+      description: A concise summary of the requested feature or improvement.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What area of the platform does this enhancement target?
+      options:
+        - Stellar Protocol / SEP Standard Integration (e.g. SEP-0008, SEP-0010, CAP-0077)
+        - Soroban Smart Contract Governance & Multisig
+        - Risk Scoring & AML Engine
+        - Operator UI / Enterprise Dashboard
+        - Developer Tooling & SDK
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem or limitation does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution & Technical Design
+      description: Detailed description of how this feature should work and interact with Stellar-Guard.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Considered Alternatives
+      description: Any alternative implementations or workarounds that were evaluated.
