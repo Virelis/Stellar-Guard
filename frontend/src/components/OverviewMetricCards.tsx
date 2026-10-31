@@ -4,23 +4,47 @@ import React, { useEffect, useRef, useState } from "react";
 
 /* ── Animated number hook ─────────────────────────────────────── */
 function useCountUp(target: number, duration = 1200): number {
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(target);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
+    // Guard: if rAF is not a real browser implementation (e.g. jsdom polyfill
+    // that fires asynchronously), just show the final value immediately.
+    if (
+      typeof window === "undefined" ||
+      typeof window.requestAnimationFrame !== "function"
+    ) {
+      setCurrent(target);
+      return;
+    }
+
+    let cancelled = false;
     const start = performance.now();
+
     const animate = (now: number) => {
+      if (cancelled) return;
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCurrent(Math.round(eased * target));
+      const next = Math.round(eased * target);
+      setCurrent(next);
       if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate);
+        rafRef.current = window.requestAnimationFrame(animate);
       }
     };
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
+
+    // Only kick off animation if target > 0 (avoids resetting to 0 in tests
+    // where rAF fires as a macro-task and the component unmounts before it runs)
+    if (target > 0) {
+      rafRef.current = window.requestAnimationFrame(animate);
+    } else {
+      setCurrent(0);
+    }
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(rafRef.current);
+    };
   }, [target, duration]);
 
   return current;
@@ -235,7 +259,7 @@ export function OverviewMetricCards({
         accent="indigo"
       />
       <MetricCard
-        title="Pending Proposals"
+        title="Pending Quorum Proposals"
         value={activeProposalsCount}
         numericValue={activeProposalsCount}
         change="Awaiting votes"
