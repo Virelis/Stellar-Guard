@@ -1,0 +1,50 @@
+{
+  "folders": [
+    {
+      "name": "Stellar-Guard Root",
+      "path": "."
+    },
+    {
+      "name": "Contracts (Soroban)",
+      "path": "contracts"
+    },
+    {
+      "name": "Backend (Express API)",
+      "path": "backend"
+    },
+    {
+      "name": "Frontend (Next.js)",
+      "path": "frontend"
+    },
+    {
+      "name": "Shared Types Package",
+      "path": "packages/types"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "[rust]": {
+      "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    },
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "files.associations": {
+      "*.xdr": "text"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "rust-lang.rust-analyzer",
+      "tamasfe.even-better-toml",
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "humao.rest-client"
+    ]
+  }
+}
