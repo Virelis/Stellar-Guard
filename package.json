@@ -11,7 +11,7 @@
   "scripts": {
     "build": "npm run build --workspace=@stellar-guard/types && npm run build --workspace=stellar-guard-backend && npm run build --workspace=stellar-guard-frontend",
     "test": "npm run test:workspace && npm run test --workspace=stellar-guard-backend && npm run test --workspace=stellar-guard-frontend",
-    "test:workspace": "npx --prefix backend jest ../tests/workspace.test.js ../tests/codebase_tooling.test.js",
+    "test:workspace": "npx --prefix backend jest ../tests/workspace.test.js ../tests/codebase_tooling.test.js ../tests/ecosystem_standards.test.js",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml}\""

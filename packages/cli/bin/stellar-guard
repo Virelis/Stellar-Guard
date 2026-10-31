@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 
 const path = require("path");
-
-// Try compiled JS dist first, or fall back to ts-node during development
-const distEntry = path.resolve(__dirname, "..", "dist", "index.js");
 const fs = require("fs");
 
-if (fs.existsSync(distEntry)) {
-  require(distEntry);
-} else {
-  // Direct execution with plain Node JS fallback
-  require("../src/index.js");
+const distEntry = path.resolve(__dirname, "..", "dist", "index.js");
+const entry = fs.existsSync(distEntry) ? distEntry : path.resolve(__dirname, "..", "src", "index.js");
+
+const cli = require(entry);
+if (typeof cli.run === "function") {
+  cli.run();
 }
