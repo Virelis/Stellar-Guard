@@ -17,6 +17,7 @@ import { authRouter } from "./routes/auth";
 import { docsRouter } from "./routes/docs";
 import { riskRouter } from "./routes/risk";
 import { integrationsRouter } from "./routes/integrations";
+import { maintenanceRouter } from "./routes/maintenance";
 import { metricsMiddleware } from "./services/metrics";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
@@ -56,6 +57,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/docs", docsRouter);
 app.use("/api/risk", riskRouter);
 app.use("/api/integrations", integrationsRouter);
+app.use("/api/admin/maintenance", maintenanceRouter);
 
 app.use(errorHandler);
 
