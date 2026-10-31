@@ -1,6 +1,7 @@
 name: Lighthouse CI Performance & Accessibility Audit
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "frontend/**"
