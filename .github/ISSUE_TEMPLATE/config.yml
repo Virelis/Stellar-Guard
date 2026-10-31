@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Stellar Developer Discord
+    url: https://discord.gg/stellardev
+    about: Ask questions and connect with the Stellar and Soroban developer community.
+  - name: Stellar Stack Exchange
+    url: https://stellar.stackexchange.com/
+    about: Search and ask technical questions about Stellar contracts, SDKs, and Horizon.
+  - name: Security Vulnerability Disclosure
+    url: https://github.com/Virelis/Stellar-Guard/security/policy
+    about: Privately report suspected security vulnerabilities to the maintainers.
