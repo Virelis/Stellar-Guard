@@ -38,17 +38,45 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // Always start in dark mode — user can toggle via ThemeToggle
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        {/* Preconnect to Google Fonts for faster load */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+        {/* Theme persistence — apply saved preference, default to dark */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('stellar_guard_theme')||localStorage.getItem('theme');if(t!=='light')document.documentElement.classList.add('dark')})()`,
+            __html: `(function(){
+              try {
+                var t = localStorage.getItem('stellar_guard_theme') || localStorage.getItem('theme');
+                if (t === 'light') {
+                  document.documentElement.classList.remove('dark');
+                } else {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch(e) {
+                document.documentElement.classList.add('dark');
+              }
+            })()`,
           }}
         />
       </head>
-      <body className="bg-white dark:bg-stellar-dark text-gray-900 dark:text-white min-h-screen flex flex-col justify-between">
+      <body
+        className="
+          bg-stellar-dark text-stellar-surface
+          dark:bg-[#020817] dark:text-slate-100
+          min-h-screen flex flex-col justify-between
+          font-sans antialiased
+          selection:bg-indigo-500/30 selection:text-white
+        "
+      >
         <ThemeProvider>
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 relative">{children}</div>
           <InstitutionalFooter />
         </ThemeProvider>
       </body>

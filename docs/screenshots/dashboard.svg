@@ -1,0 +1,357 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#060a14;stop-opacity:1" />
+    </linearGradient>
+    <!-- Header gradient -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#030918;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#050d1e;stop-opacity:0.95" />
+    </linearGradient>
+    <!-- Indigo card gradient -->
+    <linearGradient id="cardIndigoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#0f0d2e;stop-opacity:0.4" />
+    </linearGradient>
+    <!-- Violet card gradient -->
+    <linearGradient id="cardVioletGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2e1065;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#150a30;stop-opacity:0.4" />
+    </linearGradient>
+    <!-- Cyan card gradient -->
+    <linearGradient id="cardCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#083344;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#041c26;stop-opacity:0.4" />
+    </linearGradient>
+    <!-- Green card gradient -->
+    <linearGradient id="cardGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#052e16;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#021a0c;stop-opacity:0.4" />
+    </linearGradient>
+    <!-- Logo gradient -->
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1" />
+      <stop offset="100%" style="stop-color:#8b5cf6" />
+    </linearGradient>
+    <!-- Panel gradient -->
+    <linearGradient id="panelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1530;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#080e20;stop-opacity:0.7" />
+    </linearGradient>
+    <!-- Active tab gradient -->
+    <linearGradient id="tabGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4f46e5" />
+      <stop offset="100%" style="stop-color:#7c3aed" />
+    </linearGradient>
+    <!-- Input gradient -->
+    <linearGradient id="inputGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#111827;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d1321;stop-opacity:1" />
+    </linearGradient>
+    <!-- Freeze button gradient -->
+    <linearGradient id="freezeBtn" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#dc2626" />
+      <stop offset="100%" style="stop-color:#b91c1c" />
+    </linearGradient>
+    <!-- Propose button gradient -->
+    <linearGradient id="proposeBtn" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4f46e5" />
+      <stop offset="100%" style="stop-color:#7c3aed" />
+    </linearGradient>
+    <!-- Sidebar gradient -->
+    <linearGradient id="sidebarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#060c1c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a1020;stop-opacity:1" />
+    </linearGradient>
+    <!-- Glow filters -->
+    <filter id="glowIndigo" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="dropGlow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Clip paths -->
+    <clipPath id="headerClip">
+      <rect width="1200" height="56" />
+    </clipPath>
+    <clipPath id="cardClip1"><rect x="200" y="78" width="230" height="110" rx="12"/></clipPath>
+    <clipPath id="cardClip2"><rect x="444" y="78" width="230" height="110" rx="12"/></clipPath>
+    <clipPath id="cardClip3"><rect x="688" y="78" width="230" height="110" rx="12"/></clipPath>
+    <clipPath id="cardClip4"><rect x="932" y="78" width="230" height="110" rx="12"/></clipPath>
+  </defs>
+
+  <!-- ░░ MAIN BACKGROUND ░░ -->
+  <rect width="1200" height="700" fill="url(#bgGrad)" />
+
+  <!-- Nebula ambient glow blobs -->
+  <ellipse cx="200" cy="350" rx="300" ry="200" fill="#4f46e5" opacity="0.04" />
+  <ellipse cx="1000" cy="200" rx="250" ry="180" fill="#7c3aed" opacity="0.04" />
+  <ellipse cx="600" cy="600" rx="350" ry="150" fill="#0891b2" opacity="0.03" />
+
+  <!-- Subtle grid overlay -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.15" opacity="0.3"/>
+  </pattern>
+  <rect width="1200" height="700" fill="url(#grid)" opacity="0.15" />
+
+  <!-- ░░ HEADER BAR ░░ -->
+  <rect width="1200" height="56" fill="url(#headerGrad)" />
+  <!-- Header top accent line -->
+  <rect width="1200" height="1.5" y="0" fill="url(#proposeBtn)" opacity="0.9" />
+  <!-- Header bottom border -->
+  <rect width="1200" height="1" y="55" fill="#1e2d4a" opacity="0.8" />
+
+  <!-- Logo mark -->
+  <rect x="16" y="12" width="32" height="32" rx="8" fill="url(#logoGrad)" />
+  <!-- Lightning bolt in logo -->
+  <path d="M30 17 L25 29 L29 29 L26 39 L35 25 L31 25 Z" fill="white" opacity="0.95" />
+
+  <!-- Brand name -->
+  <text x="56" y="31" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700" fill="transparent">
+    <tspan fill="url(#proposeBtn)">Stellar</tspan>
+    <tspan fill="#c7d2fe">-Guard</tspan>
+  </text>
+  <!-- Simulate gradient text with two text elements -->
+  <text x="56" y="31" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700" fill="#818cf8">Stellar</text>
+  <text x="113" y="31" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700" fill="#a78bfa">-Guard</text>
+
+  <!-- CAP-0077 badge -->
+  <rect x="180" y="16" width="80" height="22" rx="11" fill="#1e1b4b" stroke="#4f46e5" stroke-width="1" opacity="0.9"/>
+  <text x="220" y="31" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#818cf8" text-anchor="middle">CAP-0077</text>
+
+  <!-- Network status pill -->
+  <rect x="272" y="16" width="100" height="22" rx="11" fill="#052e16" stroke="#16a34a" stroke-width="1" opacity="0.9"/>
+  <circle cx="284" cy="27" r="4" fill="#22c55e" />
+  <text x="300" y="31" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#86efac">Testnet Live</text>
+
+  <!-- Address book button -->
+  <rect x="830" y="13" width="100" height="28" rx="8" fill="#1e2d4a" stroke="#374151" stroke-width="1"/>
+  <text x="880" y="31" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af" text-anchor="middle">📒 Address Book</text>
+
+  <!-- New Proposal button -->
+  <rect x="942" y="13" width="118" height="28" rx="8" fill="url(#proposeBtn)" filter="url(#softGlow)"/>
+  <text x="1001" y="31" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">+ New Proposal</text>
+
+  <!-- Fast Freeze button -->
+  <rect x="1072" y="13" width="104" height="28" rx="8" fill="url(#freezeBtn)" filter="url(#softGlow)"/>
+  <text x="1124" y="31" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">⚡ Fast Freeze</text>
+
+  <!-- Wallet address pill -->
+  <rect x="630" y="14" width="186" height="26" rx="13" fill="#111827" stroke="#374151" stroke-width="1"/>
+  <circle cx="645" cy="27" r="6" fill="#4f46e5"/>
+  <text x="656" y="31" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#9ca3af">GAKL...3X7Z</text>
+  <text x="792" y="31" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#6366f1">✓ Connected</text>
+
+
+  <!-- ░░ SIDEBAR ░░ -->
+  <rect x="0" y="56" width="188" height="644" fill="url(#sidebarGrad)" />
+  <rect x="187" y="56" width="1" height="644" fill="#1e2d4a" opacity="0.6"/>
+
+  <!-- Sidebar nav items -->
+  <!-- Overview (active) -->
+  <rect x="8" y="70" width="172" height="38" rx="8" fill="#1e1b4b" stroke="#4f46e5" stroke-width="1" opacity="0.8"/>
+  <rect x="8" y="70" width="3" height="38" rx="1.5" fill="#6366f1"/>
+  <text x="28" y="94" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#818cf8">📊  Overview</text>
+
+  <!-- Proposals -->
+  <rect x="8" y="116" width="172" height="36" rx="8" fill="transparent"/>
+  <text x="28" y="138" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#6b7280">📋  Proposals</text>
+  <rect x="150" y="121" width="24" height="16" rx="8" fill="#1e1b4b"/>
+  <text x="162" y="133" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#818cf8" text-anchor="middle">3</text>
+
+  <!-- Quarantine -->
+  <rect x="8" y="158" width="172" height="36" rx="8" fill="transparent"/>
+  <text x="28" y="180" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#6b7280">🔒  Quarantine</text>
+
+  <!-- AML Scanner -->
+  <rect x="8" y="200" width="172" height="36" rx="8" fill="transparent"/>
+  <text x="28" y="222" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#6b7280">🤖  AML Scanner</text>
+
+  <!-- Audit Trail -->
+  <rect x="8" y="242" width="172" height="36" rx="8" fill="transparent"/>
+  <text x="28" y="264" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#6b7280">📜  Audit Trail</text>
+
+  <!-- IPFS Evidence -->
+  <rect x="8" y="284" width="172" height="36" rx="8" fill="transparent"/>
+  <text x="28" y="306" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#6b7280">🗂️  IPFS Evidence</text>
+
+  <!-- Settings -->
+  <rect x="8" y="326" width="172" height="36" rx="8" fill="transparent"/>
+  <text x="28" y="348" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#6b7280">⚙️  Settings</text>
+
+  <!-- Sidebar bottom status -->
+  <rect x="8" y="634" width="172" height="52" rx="10" fill="#0d1530" stroke="#1e2d4a" stroke-width="1"/>
+  <text x="20" y="656" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#6b7280">CONTRACT</text>
+  <text x="20" y="672" font-family="JetBrains Mono, monospace" font-size="8" fill="#4f46e5">CCM2U2RW...FYN4</text>
+  <circle cx="168" cy="649" r="4" fill="#22c55e"/>
+
+
+  <!-- ░░ MAIN CONTENT AREA ░░ -->
+
+  <!-- ── METRIC CARDS ── -->
+
+  <!-- Card 1: Active Proposals (Indigo) -->
+  <rect x="200" y="78" width="230" height="110" rx="12" fill="url(#cardIndigoGrad)" stroke="#4f46e5" stroke-width="1" opacity="0.9"/>
+  <rect x="200" y="78" width="230" height="3" rx="1.5" fill="url(#proposeBtn)" opacity="0.9"/>
+  <!-- Icon -->
+  <rect x="212" y="92" width="36" height="36" rx="10" fill="#312e81" />
+  <text x="230" y="115" font-family="sans-serif" font-size="18" text-anchor="middle">📋</text>
+  <!-- Value -->
+  <text x="258" y="108" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" fill="#818cf8" filter="url(#softGlow)">3</text>
+  <!-- Label -->
+  <text x="212" y="150" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#6b7280">Active Proposals</text>
+  <!-- Change badge -->
+  <rect x="349" y="85" width="72" height="18" rx="9" fill="#052e16"/>
+  <text x="385" y="98" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#86efac" text-anchor="middle">▲ +2 today</text>
+  <!-- Subtle glow -->
+  <rect x="200" y="78" width="230" height="110" rx="12" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.3" filter="url(#softGlow)"/>
+
+  <!-- Card 2: Quarantined Assets (Violet) -->
+  <rect x="444" y="78" width="230" height="110" rx="12" fill="url(#cardVioletGrad)" stroke="#7c3aed" stroke-width="1" opacity="0.9"/>
+  <rect x="444" y="78" width="230" height="3" rx="1.5" fill="#7c3aed" opacity="0.9"/>
+  <rect x="456" y="92" width="36" height="36" rx="10" fill="#4c1d95" />
+  <text x="474" y="115" font-family="sans-serif" font-size="18" text-anchor="middle">🔒</text>
+  <text x="502" y="108" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" fill="#a78bfa" filter="url(#softGlow)">14</text>
+  <text x="456" y="150" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#6b7280">Quarantined Assets</text>
+  <rect x="593" y="85" width="72" height="18" rx="9" fill="#2e1065"/>
+  <text x="629" y="98" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#c4b5fd" text-anchor="middle">▲ +1 today</text>
+
+  <!-- Card 3: Volume Monitored (Cyan) -->
+  <rect x="688" y="78" width="230" height="110" rx="12" fill="url(#cardCyanGrad)" stroke="#0891b2" stroke-width="1" opacity="0.9"/>
+  <rect x="688" y="78" width="230" height="3" rx="1.5" fill="#0891b2" opacity="0.9"/>
+  <rect x="700" y="92" width="36" height="36" rx="10" fill="#164e63" />
+  <text x="718" y="115" font-family="sans-serif" font-size="18" text-anchor="middle">📈</text>
+  <text x="746" y="108" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="800" fill="#22d3ee" filter="url(#softGlow)">$1.8M</text>
+  <text x="700" y="150" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#6b7280">Volume Monitored</text>
+  <rect x="836" y="85" width="73" height="18" rx="9" fill="#083344"/>
+  <text x="872" y="98" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#67e8f9" text-anchor="middle">▲ 24h window</text>
+
+  <!-- Card 4: Quorum Latency (Emerald) -->
+  <rect x="932" y="78" width="230" height="110" rx="12" fill="url(#cardGreenGrad)" stroke="#16a34a" stroke-width="1" opacity="0.9"/>
+  <rect x="932" y="78" width="230" height="3" rx="1.5" fill="#22c55e" opacity="0.9"/>
+  <rect x="944" y="92" width="36" height="36" rx="10" fill="#14532d" />
+  <text x="962" y="115" font-family="sans-serif" font-size="18" text-anchor="middle">⏱️</text>
+  <text x="990" y="108" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="800" fill="#4ade80" filter="url(#softGlow)">3.2 min</text>
+  <text x="944" y="150" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#6b7280">Quorum Latency</text>
+  <rect x="1079" y="85" width="72" height="18" rx="9" fill="#052e16"/>
+  <text x="1115" y="98" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#86efac" text-anchor="middle">▼ -0.4 min</text>
+
+
+  <!-- ── NAVIGATION TABS ── -->
+  <rect x="200" y="202" width="960" height="40" rx="10" fill="#0d1530" stroke="#1e2d4a" stroke-width="1"/>
+
+  <!-- Active tab: Freeze Governance -->
+  <rect x="206" y="206" width="170" height="32" rx="8" fill="url(#tabGrad)" filter="url(#softGlow)"/>
+  <text x="291" y="226" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">🏛️ Freeze Governance</text>
+
+  <!-- Inactive tabs -->
+  <text x="415" y="226" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">📊 Live Monitor</text>
+  <text x="549" y="226" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">🤖 AML Scanner</text>
+  <text x="679" y="226" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">📜 Audit Trail</text>
+  <text x="809" y="226" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">🗂️ IPFS Evidence</text>
+  <text x="937" y="226" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">⚙️ Settings</text>
+
+  <!-- Neon divider -->
+  <rect x="200" y="244" width="960" height="1" fill="url(#proposeBtn)" opacity="0.3"/>
+
+
+  <!-- ── MAIN PANEL: FREEZE GOVERNANCE ── -->
+  <rect x="200" y="252" width="960" height="420" rx="14" fill="url(#panelGrad)" stroke="#1e2d4a" stroke-width="1"/>
+  <rect x="200" y="252" width="960" height="3" rx="2" fill="url(#proposeBtn)" opacity="0.5"/>
+
+  <!-- Panel title -->
+  <text x="224" y="280" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#e2e8f0">Propose Asset Freeze</text>
+  <text x="224" y="296" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#6b7280">Submit a CAP-0077 compliant freeze proposal with IPFS-bound forensic evidence</text>
+
+  <!-- Divider -->
+  <rect x="224" y="306" width="912" height="1" fill="#1e2d4a"/>
+
+  <!-- Form Row 1: Target Asset + Target Account -->
+  <text x="224" y="330" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af">Target Asset Code</text>
+  <rect x="224" y="336" width="420" height="38" rx="8" fill="url(#inputGrad)" stroke="#374151" stroke-width="1"/>
+  <text x="240" y="359" font-family="JetBrains Mono, monospace" font-size="12" fill="#6b7280">e.g. USDC</text>
+
+  <text x="664" y="330" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af">Asset Issuer Address</text>
+  <rect x="664" y="336" width="472" height="38" rx="8" fill="url(#inputGrad)" stroke="#374151" stroke-width="1"/>
+  <text x="680" y="359" font-family="JetBrains Mono, monospace" font-size="12" fill="#6b7280">GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5</text>
+
+  <!-- Form Row 2: Account Address + Risk Score -->
+  <text x="224" y="394" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af">Account to Quarantine</text>
+  <rect x="224" y="400" width="560" height="38" rx="8" fill="url(#inputGrad)" stroke="#374151" stroke-width="1"/>
+  <text x="240" y="423" font-family="JetBrains Mono, monospace" font-size="12" fill="#d1d5db">GDKIJJIKXLOM2NRMPNQZUUYK24ZPVFC6426GZAEP3KUK6BUCKFOO7ZSN</text>
+
+  <text x="800" y="394" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af">AML Risk Score</text>
+  <rect x="800" y="400" width="336" height="38" rx="8" fill="url(#inputGrad)" stroke="#dc2626" stroke-width="1.5"/>
+  <!-- Risk score bar -->
+  <rect x="814" y="414" width="200" height="8" rx="4" fill="#1f2937"/>
+  <rect x="814" y="414" width="152" height="8" rx="4" fill="#ef4444" opacity="0.8"/>
+  <text x="1020" y="425" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="#f87171">76 / 100</text>
+  <rect x="1090" y="404" width="36" height="20" rx="6" fill="#7f1d1d"/>
+  <text x="1108" y="418" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="#fca5a5" text-anchor="middle">HIGH</text>
+
+  <!-- Form Row 3: Reason + IPFS Evidence -->
+  <text x="224" y="458" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af">Freeze Reason / Justification</text>
+  <rect x="224" y="464" width="560" height="60" rx="8" fill="url(#inputGrad)" stroke="#374151" stroke-width="1"/>
+  <text x="240" y="484" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#6b7280">AML-2024-0091: Suspicious layering pattern detected across 14 transactions...</text>
+
+  <text x="800" y="458" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#9ca3af">IPFS Evidence CID</text>
+  <rect x="800" y="464" width="336" height="38" rx="8" fill="url(#inputGrad)" stroke="#0891b2" stroke-width="1"/>
+  <text x="816" y="487" font-family="JetBrains Mono, monospace" font-size="10" fill="#67e8f9">ipfs://QmXf3bKvRzQp9x2n1oEvYG7Vk...</text>
+
+  <!-- IPFS attach button -->
+  <rect x="800" y="508" width="160" height="30" rx="8" fill="#083344" stroke="#0891b2" stroke-width="1"/>
+  <text x="880" y="527" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#22d3ee" text-anchor="middle">📎 Attach Evidence</text>
+
+  <!-- Form Row 4: Quorum + Timelock info bar -->
+  <rect x="224" y="540" width="912" height="48" rx="10" fill="#0d1530" stroke="#1e2d4a" stroke-width="1"/>
+  <!-- Quorum -->
+  <text x="240" y="558" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280">QUORUM REQUIRED</text>
+  <text x="240" y="575" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#818cf8">≥ 66%  (4 / 6 signers)</text>
+  <!-- Timelock -->
+  <rect x="430" y="548" width="1" height="30" fill="#1e2d4a"/>
+  <text x="450" y="558" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280">TIMELOCK</text>
+  <text x="450" y="575" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">24 hours post-quorum</text>
+  <!-- SEP info -->
+  <rect x="660" y="548" width="1" height="30" fill="#1e2d4a"/>
+  <text x="680" y="558" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280">PROTOCOL</text>
+  <text x="680" y="575" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#22d3ee">CAP-0077 · SEP-0008</text>
+  <!-- Network -->
+  <rect x="880" y="548" width="1" height="30" fill="#1e2d4a"/>
+  <text x="900" y="558" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280">NETWORK</text>
+  <text x="900" y="575" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#86efac">Testnet ● Live</text>
+
+  <!-- Action buttons -->
+  <rect x="224" y="600" width="200" height="42" rx="10" fill="url(#proposeBtn)" filter="url(#softGlow)"/>
+  <text x="324" y="625" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle">📋 Submit Proposal</text>
+
+  <rect x="440" y="600" width="180" height="42" rx="10" fill="url(#freezeBtn)" filter="url(#softGlow)"/>
+  <text x="530" y="625" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle">⚡ Emergency Freeze</text>
+
+  <rect x="636" y="600" width="130" height="42" rx="10" fill="#111827" stroke="#374151" stroke-width="1"/>
+  <text x="701" y="625" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#9ca3af" text-anchor="middle">Cancel</text>
+
+  <!-- Bottom status bar -->
+  <rect x="1020" y="600" width="140" height="42" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="1"/>
+  <circle cx="1036" cy="621" r="4" fill="#22c55e"/>
+  <text x="1090" y="619" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#86efac" text-anchor="middle">Freighter Connected</text>
+  <text x="1090" y="634" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#4ade80" text-anchor="middle">GAKL...3X7Z</text>
+
+</svg>
