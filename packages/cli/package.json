@@ -1,0 +1,21 @@
+{
+  "name": "@stellar-guard/cli",
+  "version": "1.0.0",
+  "description": "Enterprise CLI tool for Stellar-Guard freeze governance and multi-sig operations",
+  "bin": {
+    "stellar-guard": "./bin/stellar-guard"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@stellar-guard/types": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "license": "MIT"
+}
