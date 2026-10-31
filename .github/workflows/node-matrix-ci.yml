@@ -1,0 +1,56 @@
+name: Node.js Monorepo Matrix CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "backend/**"
+      - "frontend/**"
+      - "package*.json"
+      - ".github/workflows/node-matrix-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "backend/**"
+      - "frontend/**"
+      - "package*.json"
+      - ".github/workflows/node-matrix-ci.yml"
+
+jobs:
+  matrix-test:
+    name: Node ${{ matrix.node-version }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install root and workspace dependencies
+        run: npm ci
+
+      - name: Build shared packages
+        run: npm run build --workspace=@stellar-guard/types
+
+      - name: Backend typecheck & tests
+        run: |
+          cd backend
+          npm test
+
+      - name: Frontend build & tests
+        run: |
+          cd frontend
+          npm test
+          npm run build
