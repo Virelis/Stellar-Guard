@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "../context/ThemeContext";
+import { InstitutionalFooter } from "../components/InstitutionalFooter";
 
 export const metadata: Metadata = {
   title: "Stellar-Guard | CAP-0077 Command Center",
@@ -17,9 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="bg-white dark:bg-stellar-dark text-gray-900 dark:text-white min-h-screen">
+      <body className="bg-white dark:bg-stellar-dark text-gray-900 dark:text-white min-h-screen flex flex-col justify-between">
         <ThemeProvider>
-          {children}
+          <div className="flex-1">
+            {children}
+          </div>
+          <InstitutionalFooter />
         </ThemeProvider>
       </body>
     </html>
