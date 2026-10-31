@@ -14,3 +14,4 @@ rm -f "$ROOT_DIR"/*.tsbuildinfo "$ROOT_DIR"/backend/*.tsbuildinfo "$ROOT_DIR"/fr
 rm -f "$ROOT_DIR/mock-compliance-dataset.json"
 
 echo "Storage purge completed cleanly."
+

@@ -22,3 +22,4 @@ git tag -a "$VERSION" -m "Release $VERSION: Institutional CAP-0077 Freeze & RWA 
 
 echo "Release $VERSION created successfully."
 echo "To push this release tag to GitHub, run: git push origin $VERSION"
+

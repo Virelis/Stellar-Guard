@@ -124,3 +124,4 @@ describe("Batch 7: Frontend Core & Institutional Components", () => {
     });
   });
 });
+

@@ -4,11 +4,34 @@
 [![Soroban](https://img.shields.io/badge/Soroban-Smart%20Contracts-purple.svg)](https://soroban.stellar.org)
 [![CAP-0077](https://img.shields.io/badge/CAP-0077%20Quarantine-green.svg)](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0077.md)
 [![SEP Standards](https://img.shields.io/badge/SEP-0001%20%7C%200008%20%7C%200010-orange.svg)](https://stellar.org/developers)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Production-black.svg?logo=vercel)](https://frontend-ten-steel-13.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI Matrix](https://img.shields.io/badge/CI-Passing%20(Node%20%2B%20Rust)-brightgreen.svg)](https://github.com/Virelis/Stellar-Guard/actions)
 
 > **Institutional Multi-Signature Freeze Governance & Asset Protection for Regulated RWAs on Stellar.**  
 > Built for the **Stellar Drips Wave** and the **Stellar Community Fund**.
+
+---
+
+## 🌐 Live Deployments & Network Artifacts
+
+| Component | Network / Host | Details / Links |
+| :--- | :--- | :--- |
+| **Operator Dashboard** | Vercel Production | 🚀 [https://frontend-ten-steel-13.vercel.app](https://frontend-ten-steel-13.vercel.app) |
+| **Soroban Smart Contract** | Stellar Testnet | [`CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4`](https://stellar.expert/explorer/testnet/contract/CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4) |
+| **WASM Bytecode Hash** | Stellar Testnet | `e2a544b76cfc3c002357f081c39a7af26a5c242bde8f06fec82f4d534be6b42f` (43.49 KB) |
+| **Contract Initialization Tx** | Stellar Testnet | [`bc20cb27a8dd0e21...`](https://stellar.expert/explorer/testnet/tx/bc20cb27a8dd0e21ea09d1da8ebeb77acace19b9b81f72397c112e9c228288b9) |
+| **Backend REST API** | Express / TS | Local & Docker Compose (`http://localhost:4000`) |
+
+---
+
+## 📸 Product Showcase & Screenshots
+
+### Command Center & Live Freeze Panel
+![Stellar-Guard Dashboard](docs/screenshots/dashboard.png)
+
+### Emergency Mobile Alert Interface
+![Stellar-Guard Mobile](docs/screenshots/mobile_view.png)
 
 ---
 
@@ -96,21 +119,28 @@ npx @stellar-guard/cli vote <PROPOSAL_ID> --approve
 
 ---
 
-## 📚 Institutional Documentation
+## 📚 Documentation & Governance
 
-- [Protocol Whitepaper](docs/WHITEPAPER.md)
-- [System Architecture](docs/ARCHITECTURE.md)
-- [STRIDE Threat Model](docs/THREAT_MODEL.md)
-- [CAP-0077 Technical Specification](docs/CAP_0077_QUARANTINE_SPEC.md)
-- [SEP-0008 Regulated Assets Guide](docs/SEP_0008_REGULATED_ASSETS.md)
-- [SEP-0010 Stellar WebAuth Guide](docs/SEP_0010_WEBAUTH_GUIDE.md)
-- [CLI Reference Manual](docs/CLI_REFERENCE.md)
-- [Enterprise Onboarding Guide](docs/INSTITUTIONAL_ONBOARDING.md)
-- [Disaster Recovery & Key Compromise Runbook](docs/DISASTER_RECOVERY_RUNBOOK.md)
-- [Stellar Drips Wave Alignment](docs/STELLAR_DRIPS_WAVE_ALIGNMENT.md)
+- **Governance & Legal:**
+  - [MIT License](LICENSE)
+  - [Contributor Code of Conduct](CODE_OF_CONDUCT.md)
+  - [Contributing Guidelines](CONTRIBUTING.md)
+  - [Security Policy & Responsible Disclosure](SECURITY.md)
+  - [Changelog & Version History](CHANGELOG.md)
+- **Technical & Architecture:**
+  - [Protocol Whitepaper](docs/WHITEPAPER.md)
+  - [System Architecture Specification](docs/ARCHITECTURE.md)
+  - [STRIDE Threat Model](docs/THREAT_MODEL.md)
+  - [CAP-0077 Technical Specification](docs/CAP_0077_QUARANTINE_SPEC.md)
+  - [SEP-0008 Regulated Assets Guide](docs/SEP_0008_REGULATED_ASSETS.md)
+  - [SEP-0010 Stellar WebAuth Guide](docs/SEP_0010_WEBAUTH_GUIDE.md)
+  - [CLI Reference Manual](docs/CLI_REFERENCE.md)
+  - [Enterprise Onboarding Guide](docs/INSTITUTIONAL_ONBOARDING.md)
+  - [Disaster Recovery & Key Compromise Runbook](docs/DISASTER_RECOVERY_RUNBOOK.md)
+  - [Stellar Drips Wave Strategic Alignment](docs/STELLAR_DRIPS_WAVE_ALIGNMENT.md)
 
 ---
 
 ## 🛡️ License
 
-This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
+This project is open-source and dual-protected under the [MIT License](LICENSE).

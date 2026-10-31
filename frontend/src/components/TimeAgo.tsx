@@ -28,3 +28,4 @@ export function TimeAgo({ timestamp, className = "" }: TimeAgoProps) {
     </time>
   );
 }
+

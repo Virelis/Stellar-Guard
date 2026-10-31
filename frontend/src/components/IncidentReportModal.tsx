@@ -131,3 +131,4 @@ export function IncidentReportModal({ isOpen, onClose, data }: IncidentReportMod
     </div>
   );
 }
+

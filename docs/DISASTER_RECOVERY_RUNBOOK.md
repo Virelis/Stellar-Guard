@@ -29,3 +29,4 @@ If an innocent customer account is mistakenly quarantined:
 2. Compliance officer opens an **Unfreeze Proposal** in the dashboard with dispute ticket CID.
 3. Two independent compliance managers sign the unfreeze transaction.
 4. Quorum triggers instant trustline restoration on the Stellar ledger.
+

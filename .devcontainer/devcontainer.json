@@ -24,3 +24,4 @@
   "postCreateCommand": "npm install && npm run build --workspace=@stellar-guard/types",
   "remoteUser": "vscode"
 }
+

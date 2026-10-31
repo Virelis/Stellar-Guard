@@ -46,3 +46,4 @@ Inspects an on-chain account's trustlines, AML risk score, or validates transact
 stellar-guard inspect GA7Q...
 stellar-guard inspect AAAA... --json
 ```
+

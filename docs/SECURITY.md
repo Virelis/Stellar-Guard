@@ -27,3 +27,4 @@ If you discover a security vulnerability, **please do not open a public GitHub i
 Eligible targets for our security bounty program:
 - **In Scope:** Soroban smart contracts (`contracts/**`), cryptographic verification routines, quorum bypass exploits, replay vulnerabilities, unauthorized privilege escalation, and SQL injection flaws in the backend.
 - **Out of Scope:** Social engineering attacks against team members, denial of service against public demo endpoints, and known mock testnet issues.
+

@@ -19,3 +19,4 @@ done < <(find "$ROOT_DIR" \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -n
 
 echo "Scanned $TOTAL_SCANNED source files across monorepo."
 echo "License checks passed."
+

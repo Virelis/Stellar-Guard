@@ -49,3 +49,4 @@ Where:
 | **Ransomware / Denial of Service** | Whitelist registry protects core infrastructure accounts from freeze. |
 | **Replay Attacks** | Deterministic monotonic sequence numbers (`action_seq`) prevent replay. |
 | **Unbounded Storage Growth** | Soroban storage rent management automatically prunes expired proposal state. |
+

@@ -37,3 +37,4 @@ export interface FatfTravelRuleRecord {
   complianceStatus: "VERIFIED" | "FLAGGED_INCOMPLETE" | "REJECTED";
   timestamp: number;
 }
+

@@ -64,3 +64,4 @@ export function ComplianceMemoBadge({ memo, memoType = "text" }: ComplianceMemoB
     </span>
   );
 }
+

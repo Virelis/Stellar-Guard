@@ -33,3 +33,4 @@ for ADDR in $ADDRESSES; do
 done
 
 echo "Funding sequence completed."
+

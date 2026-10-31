@@ -57,5 +57,5 @@ jobs:
 
       - name: Verify WASM bytecode artifact existence
         run: |
-          test -f target/wasm32-unknown-unknown/release/governance_multisig.wasm
+          test -f target/wasm32-unknown-unknown/release/stellar_guard_contract.wasm || test -f target/wasm32-unknown-unknown/release/governance_multisig.wasm
           ls -lh target/wasm32-unknown-unknown/release/*.wasm

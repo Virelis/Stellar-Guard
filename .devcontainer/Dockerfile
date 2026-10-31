@@ -9,3 +9,4 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 USER vscode
 RUN rustup target add wasm32-unknown-unknown \
     && rustup component add clippy rustfmt
+

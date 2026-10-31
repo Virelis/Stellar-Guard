@@ -27,3 +27,4 @@ $Files = Get-ChildItem -Path $RootDir -Include $Extensions -Recurse | Where-Obje
 
 Write-Host "Scanned $($Files.Count) source files across monorepo." -ForegroundColor Green
 Write-Host "License checks passed." -ForegroundColor Green
+

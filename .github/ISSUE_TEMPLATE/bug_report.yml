@@ -51,3 +51,4 @@ body:
       label: Environment Info
       description: Browser, OS, Node version, Rust version, Stellar network (Testnet / Standalone / Mainnet).
       placeholder: Node v20.18.0, Rust 1.81.0, Chrome 129, Testnet
+

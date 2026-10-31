@@ -69,3 +69,4 @@ export function Sep1DomainBadge({ domain = "stellar-guard.org", verified = true 
     </div>
   );
 }
+

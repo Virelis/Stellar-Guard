@@ -30,3 +30,4 @@ When an admin casts an approval vote:
 3. Verify the target address and quorum proposal ID.
 4. Press both physical buttons on the Ledger device to approve the signature.
 5. The cryptographic Ed25519 signature is transmitted to the Stellar-Guard backend and relayed to the Soroban contract.
+

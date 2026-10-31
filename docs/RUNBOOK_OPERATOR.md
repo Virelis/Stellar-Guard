@@ -24,3 +24,4 @@ When an AML alert or law enforcement inquiry occurs:
 3. **Draft Evidence Dossier:** Compile relevant transaction hashes and documentation into a PDF, upload to IPFS, and copy the CID.
 4. **Initiate Proposal:** Click **Emergency Freeze** in the header, input the address, asset code (e.g. `USDC`), category, and paste the IPFS CID.
 5. **Notify Secondary Trustee:** Alert the secondary compliance officer via secure internal comms to review and sign.
+

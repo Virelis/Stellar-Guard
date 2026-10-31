@@ -62,3 +62,4 @@ console.log(`Total Components Evaluated: ${componentFiles.length}`);
 console.log(`Active Components: ${componentFiles.length - orphanedCount}`);
 console.log(`Unreferenced Candidates: ${orphanedCount}`);
 console.log("------------------------------------------------------------------");
+

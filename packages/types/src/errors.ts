@@ -77,3 +77,4 @@ export function mapSorobanErrorToHttp(sorobanCode: number): {
       return { status: 400, message: `Soroban contract execution error (${sorobanCode}).` };
   }
 }
+

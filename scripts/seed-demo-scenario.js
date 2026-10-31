@@ -54,3 +54,4 @@ console.log(`[OK] Demo proposals manifest generated at ${SEED_MANIFEST_PATH}`);
 
 console.log("------------------------------------------------------------------");
 console.log("Demo scenarios seeded successfully: ready for live presentation.");
+

@@ -58,3 +58,4 @@ $$Q(n, \theta) = \max\left(2, \left\lceil \frac{n \times \theta}{100} \right\rce
 ## 4. Conclusion
 
 Stellar-Guard bridges the gap between statutory financial regulation and decentralized trust. By combining Soroban smart contract guarantees with Stellar's sub-second finality and low transaction fees, Stellar-Guard sets the standard for institutional RWA asset protection in web3.
+

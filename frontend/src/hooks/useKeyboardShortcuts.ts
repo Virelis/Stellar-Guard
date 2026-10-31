@@ -29,3 +29,4 @@ export function useKeyboardShortcuts(shortcuts: ShortcutMap, onOpenPalette?: () 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [shortcuts, onOpenPalette]);
 }
+

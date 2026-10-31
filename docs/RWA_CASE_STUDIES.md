@@ -35,3 +35,4 @@ Stellar is the leading network for institutional tokenization of Real-World Asse
 - **Stellar-Guard Integration:**
   - Real-time Oracle integration tracking Verra and Gold Standard retirement events.
   - Automated quarantine triggered if credits are simultaneously listed on competing chains.
+

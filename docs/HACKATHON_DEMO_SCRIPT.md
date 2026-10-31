@@ -29,3 +29,4 @@
 - **Visual:** Click **Export PDF Audit Report**. Show the generated institutional incident certificate with XDR hashes.
 - **Visual:** Switch to terminal and run `stellar-guard status --json`.
 - **Narrator:** *"Complete audit trails, enterprise SIEM webhooks, and a standalone CLI. Stellar-Guard is production-ready, fully tested, and ready to secure the next generation of regulated assets on Stellar. Thank you!"*
+

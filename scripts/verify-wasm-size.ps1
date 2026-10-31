@@ -46,3 +46,4 @@ if ($AnyExceeded) {
 }
 
 Write-Host "All WASM binaries passed size verification." -ForegroundColor Green
+

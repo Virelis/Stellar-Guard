@@ -53,3 +53,4 @@ Stellar-Guard is architected across four decoupled tiers designed for high avail
 - Integrates Freighter, Albedo, and xBull wallet signing.
 - Simulates transaction gas fees and state diffs prior to on-chain execution.
 - Generates PDF audit reports and exports CSV audit ledgers.
+

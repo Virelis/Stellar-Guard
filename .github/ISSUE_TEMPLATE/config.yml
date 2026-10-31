@@ -9,3 +9,4 @@ contact_links:
   - name: Security Vulnerability Disclosure
     url: https://github.com/Virelis/Stellar-Guard/security/policy
     about: Privately report suspected security vulnerabilities to the maintainers.
+

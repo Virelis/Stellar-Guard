@@ -40,3 +40,4 @@ SEP-0008 defines the standard protocol for regulated assets on the Stellar netwo
 - **No Single Point of Failure (SPOF):** No single internal actor or compromised private key can unilaterally freeze a regulated customer's account.
 - **Audit Immutability:** Every freeze or unfreeze proposal carries an immutable IPFS evidence hash and ledger timestamp.
 - **Automated Revocation:** If false-positive evidence is presented during the dispute period, admins can vote to unfreeze with equal quorum rigor.
+

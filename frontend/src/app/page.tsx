@@ -16,6 +16,7 @@ import { EmergencyFreezeDrawer } from "@/components/EmergencyFreezeDrawer";
 import { AddressBookModal } from "@/components/AddressBookModal";
 import { CommandPaletteModal, CommandAction } from "@/components/CommandPaletteModal";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { HackathonDemoBanner } from "@/components/HackathonDemoBanner";
 import { SkipToContent } from "@/components/SkipToContent";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider, useToast } from "@/context/ToastContext";
@@ -141,6 +142,7 @@ function DashboardContent() {
     <>
       <SkipToContent />
       <OfflineBanner />
+      <HackathonDemoBanner />
 
       <HeaderNav
         onConnectWallet={setPublicKey}

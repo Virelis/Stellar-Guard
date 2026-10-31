@@ -31,3 +31,4 @@ SEP-0010 specifies cryptographic authentication for Stellar accounts. Instead of
 1. **Challenge Generation:** The server builds a standard 0-amount manage data transaction signed by the server's key, with timebounds ($T \le 300\text{s}$) to prevent replay.
 2. **Client Signing:** The operator's wallet signs the transaction envelope without broadcasting it to the Stellar ledger (zero network fees incurred).
 3. **Verification & JWT Issuance:** The server verifies that the signature belongs to an authorized governance admin, generating a signed JWT token containing the operator's public address and governance privileges.
+

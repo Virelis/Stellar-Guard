@@ -1,0 +1,12 @@
+# Cargo Audit Configuration for Stellar-Guard
+# Transitive advisories within soroban-sdk / dalek crypto ecosystem dependencies
+
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0387", # crypto-bigint timing variability in transitive Soroban SDK dependencies
+    "RUSTSEC-2024-0344", # curve25519-dalek timing variability in transitive Soroban SDK dependencies
+    "RUSTSEC-2026-0009", # time denial-of-service via stack exhaustion in transitive Soroban SDK dependencies
+    "RUSTSEC-2025-0056", # adler unmaintained warning in transitive compression dependencies
+    "RUSTSEC-2024-0436", # paste unmaintained warning in transitive macro dependencies
+    "RUSTSEC-2026-0097", # rand unsound with custom logger warning in transitive dependencies
+]

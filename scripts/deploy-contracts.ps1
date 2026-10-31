@@ -29,7 +29,10 @@ Write-Host " Stellar-Guard Soroban Deployment Automation " -ForegroundColor Yell
 Write-Host "==============================================" -ForegroundColor Cyan
 
 $RootDir = Resolve-Path "$PSScriptRoot\.."
-$WasmPath = "$RootDir\target\wasm32-unknown-unknown\release\governance_multisig.wasm"
+$WasmPath = "$RootDir\target\wasm32-unknown-unknown\release\stellar_guard_contract.wasm"
+if (-not (Test-Path $WasmPath)) {
+    $WasmPath = "$RootDir\target\wasm32-unknown-unknown\release\governance_multisig.wasm"
+}
 
 Write-Host "[1/4] Building release WASM contract bytecode..." -ForegroundColor Cyan
 cargo build --manifest-path "$RootDir\Cargo.toml" --release --target wasm32-unknown-unknown
@@ -69,3 +72,4 @@ Write-Host "RPC_URL=$RpcUrl" -ForegroundColor Yellow
 Write-Host "NETWORK_PASSPHRASE=$NetworkPassphrase" -ForegroundColor Yellow
 Write-Host "--------------------------------------------------------" -ForegroundColor Gray
 Write-Host "Add these variables to backend/.env and frontend/.env.local." -ForegroundColor Cyan
+

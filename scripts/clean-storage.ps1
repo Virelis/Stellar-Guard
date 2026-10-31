@@ -34,3 +34,4 @@ foreach ($pattern in $Targets) {
 }
 
 Write-Host "Storage purge completed. Cleaned $RemovedCount path(s)." -ForegroundColor Green
+

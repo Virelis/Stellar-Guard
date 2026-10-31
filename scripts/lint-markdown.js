@@ -60,3 +60,4 @@ for (const file of mdFiles) {
 console.log("------------------------------------------------------------------");
 console.log(`Scanned: ${mdFiles.length} files | Empty files: ${issuesCount}`);
 console.log("Documentation lint passed.");
+

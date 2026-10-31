@@ -27,3 +27,4 @@ export interface StreamHeartbeatEvent {
   activeSubscribers: number;
   latestLedgerSequence?: number;
 }
+

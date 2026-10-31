@@ -63,3 +63,4 @@ if (exceededCount > 0) {
 } else {
   console.log("[SUCCESS] All chunks are within the performance budget.");
 }
+

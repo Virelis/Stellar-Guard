@@ -99,3 +99,4 @@ export function QuorumCalculatorModal({ isOpen, onClose }: QuorumCalculatorModal
     </div>
   );
 }
+

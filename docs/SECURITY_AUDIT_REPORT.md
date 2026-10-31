@@ -28,3 +28,4 @@
 ### Invariant 4: Circuit Breaker Emergency Isolation
 *Property:* When the emergency circuit breaker is active, all non-admin operational methods abort with `FreezeError::EmergencyPaused`.
 *Status:* **VERIFIED** with automated breaker trip simulation.
+

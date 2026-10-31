@@ -105,3 +105,4 @@ export function CommandPaletteModal({ isOpen, onClose, actions }: CommandPalette
     </div>
   );
 }
+

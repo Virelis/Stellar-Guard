@@ -47,3 +47,4 @@ cargo fmt --all -- --check
 node scripts/verify-checksums.js verify
 ```
 The computed SHA-256 hash must match `WASM_CHECKSUMS.sha256` in the repository root.
+

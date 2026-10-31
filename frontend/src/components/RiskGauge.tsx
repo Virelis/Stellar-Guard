@@ -93,3 +93,4 @@ export function RiskGauge({ score, size = 180, level }: RiskGaugeProps) {
     </div>
   );
 }
+

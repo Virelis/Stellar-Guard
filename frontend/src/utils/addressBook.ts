@@ -61,3 +61,4 @@ export function resolveAlias(address: string): string {
   if (match) return match.alias;
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
+

@@ -101,3 +101,4 @@ switch ($Task) {
         Write-Host "Usage: .\scripts\task-runner.ps1 [build | test | lint | format | clean]"
     }
 }
+

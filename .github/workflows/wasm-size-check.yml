@@ -25,3 +25,4 @@ jobs:
 
       - name: Check WASM size against 64KB threshold
         run: ./scripts/verify-wasm-size.sh
+

@@ -46,3 +46,4 @@ foreach ($Addr in $Addresses) {
 }
 
 Write-Host "Funding sequence completed." -ForegroundColor Green
+

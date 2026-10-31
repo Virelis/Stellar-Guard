@@ -42,3 +42,4 @@ if [ "$ANY_EXCEEDED" -ne 0 ]; then
 fi
 
 echo "All WASM binaries passed size verification."
+

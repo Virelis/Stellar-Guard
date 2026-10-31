@@ -37,3 +37,4 @@ Stellar-Guard is purpose-built for regulated financial institutions, fiat-backed
 - **Webhooks:** Register outbound webhooks in the Settings drawer with HMAC-SHA256 secrets.
 - **Syslog / Splunk:** Ingest real-time JSON logs emitted by the backend monitor on stdout.
 - **REST APIs:** Use the `@stellar-guard/types` SDK or OpenAPI client to integrate into internal ticketing systems (ServiceNow, Jira).
+

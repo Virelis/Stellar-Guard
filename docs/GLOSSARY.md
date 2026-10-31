@@ -35,3 +35,4 @@ The string encoding standard used by Stellar to represent public keys (starting 
 
 ### XDR
 **External Data Representation:** The binary serialization standard used across Stellar Core to encode transactions, ledgers, and operations.
+

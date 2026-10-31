@@ -20,3 +20,4 @@ To minimize long-term storage rent fees on the Stellar ledger:
 - **Active Proposals:** Stored in **Temporary Storage** with an automatic 30-day TTL. Expired proposals naturally evict from the ledger state without ongoing rent liability.
 - **Quarantined Asset Registry:** Stored in **Persistent Storage** with automated lifetime extension (`extend_ttl`) to ensure asset restrictions remain permanently enforced until explicitly unfrozen.
 - **Admin Configuration:** Stored in **Instance Storage** shared across all contract invocations for minimal footprint.
+

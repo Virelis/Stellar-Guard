@@ -98,3 +98,4 @@ export class StellarGuardClient {
 
 fs.writeFileSync(OUTPUT_PATH, CLIENT_CODE, "utf-8");
 console.log(`Successfully generated typed client SDK at ${OUTPUT_PATH}`);
+

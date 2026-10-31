@@ -49,3 +49,4 @@ display_decimals = 7
 regulated = true
 approval_server = "https://api.stellar-guard.dev/api/sep8/approval"
 approval_criteria = "CAP-0077 Multi-Sig Approval and AML Risk Clearance"
+

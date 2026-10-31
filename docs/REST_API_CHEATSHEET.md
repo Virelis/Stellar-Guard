@@ -63,3 +63,4 @@ curl -s -X POST http://localhost:4000/api/freeze/simulate \
     "assetCode": "USDC"
   }'
 ```
+

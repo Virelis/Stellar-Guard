@@ -48,3 +48,4 @@ function handleVote(args = []) {
 }
 
 module.exports = { handleVote };
+

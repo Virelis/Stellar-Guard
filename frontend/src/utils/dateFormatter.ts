@@ -55,3 +55,4 @@ export function formatDuration(seconds: number): string {
   if (s > 0 || parts.length === 0) parts.push(`${s}s`);
   return parts.join(" ");
 }
+

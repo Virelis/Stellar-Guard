@@ -33,3 +33,4 @@ git tag -a $Version -m "Release $Version: Institutional CAP-0077 Freeze & RWA As
 
 Write-Host "Release $Version created successfully." -ForegroundColor Green
 Write-Host "To push this release tag to GitHub, run: git push origin $Version" -ForegroundColor Yellow
+

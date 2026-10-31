@@ -35,3 +35,4 @@ export interface GovernanceTransitionEvent {
   timestamp: number;
   reason?: string;
 }
+

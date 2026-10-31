@@ -24,3 +24,4 @@ Stellar-Guard directly addresses the most critical barrier facing institutional 
 - **Evidence-Bound Proposals:** Every quarantine proposal cryptographically binds an IPFS hash containing immutable legal or forensic evidence.
 - **Off-Chain / On-Chain Parity:** Monitored via persistent Horizon SSE stream, calculated with real-time AML scoring, and executed deterministically on Soroban.
 - **Production-Ready Full Stack:** Complete with Rust smart contracts, Node.js streaming backend, Next.js operator dashboard, and an official `@stellar-guard/cli`.
+

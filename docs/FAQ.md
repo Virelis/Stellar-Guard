@@ -22,3 +22,4 @@
 
 ### Q5: Is Stellar-Guard compatible with mainnet regulated stablecoins like Circle USDC?
 **A:** Yes. Any Stellar asset that sets the `AUTH_CLAWBACK_ENABLED` or `AUTH_REVOCABLE` flag can integrate with Stellar-Guard as its designated governance execution controller.
+

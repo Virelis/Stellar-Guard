@@ -10,3 +10,4 @@
 | **Information Disclosure** | Competitor discovers ongoing AML investigation before formal quarantine. | Eavesdropping on unencrypted RPC feeds. | **IPFS CID Encryption.** Incident reports and evidentiary documents are encrypted with the compliance council's shared public key before upload. |
 | **Denial of Service** | Malicious actor spams false proposals to exhaust contract storage or lock institutional treasury keys. | High-frequency proposal submission or griefing. | **Spam Cooldown + Whitelist Registry.** Core treasury keys cannot be targeted due to contract-level whitelist checks; proposals enforce monotonic sequence cooldowns. |
 | **Elevation of Privilege** | Compromised lower-privilege auditor attempts to execute quarantine or alter admin thresholds. | Exploiting logic flaw in contract roles. | **Strict RBAC + Unanimous Super-Quorum.** Modifying administrator sets or threshold parameters requires super-quorum approval from existing administrators. |
+

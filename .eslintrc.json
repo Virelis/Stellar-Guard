@@ -16,6 +16,7 @@
   "rules": {
     "prefer-const": "error",
     "no-unused-vars": "off",
+    "no-undef": "off",
     "no-empty": "warn"
   },
   "ignorePatterns": [
@@ -28,3 +29,4 @@
     "*.wasm"
   ]
 }
+

@@ -46,3 +46,4 @@ export function CopyButton({ text, label, compact = false, className = "" }: Cop
     </button>
   );
 }
+

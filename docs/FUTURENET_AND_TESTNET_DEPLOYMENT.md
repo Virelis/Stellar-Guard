@@ -58,3 +58,4 @@ stellar contract invoke \
   --admins '[ "GA7Q...", "GBND...", "GC3K..." ]' \
   --threshold_percent 66
 ```
+

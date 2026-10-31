@@ -19,3 +19,4 @@ The Stellar-Guard Protocol operates under three non-negotiable principles:
 - **Admin Set Modification:** Adding or removing an administrator key requires an affirmative vote of at least **80%** (Super-Quorum).
 - **Emergency Circuit Breaker:** Any single administrator may trigger the emergency pause for up to **48 hours** upon detecting an active exploit, during which only admin replacement and unfreeze actions may proceed.
 - **Smart Contract Upgrades:** Upgrading contract WASM bytecode requires **100% Unanimous Consent** of the active governance council followed by a mandatory 72-hour timelock delay.
+

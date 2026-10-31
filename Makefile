@@ -49,3 +49,4 @@ docker-down:
 clean:
 	cargo clean
 	rm -rf dist build .next coverage node_modules
+

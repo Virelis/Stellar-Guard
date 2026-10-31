@@ -6,7 +6,10 @@ set -euo pipefail
 NETWORK="${1:-testnet}"
 QUORUM="${2:-2}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WASM_PATH="$ROOT_DIR/target/wasm32-unknown-unknown/release/governance_multisig.wasm"
+WASM_PATH="$ROOT_DIR/target/wasm32-unknown-unknown/release/stellar_guard_contract.wasm"
+if [ ! -f "$WASM_PATH" ]; then
+  WASM_PATH="$ROOT_DIR/target/wasm32-unknown-unknown/release/governance_multisig.wasm"
+fi
 
 echo "=============================================="
 echo " Stellar-Guard Soroban Deployment Automation "
@@ -53,3 +56,4 @@ echo "RPC_URL=$RPC_URL"
 echo "NETWORK_PASSPHRASE=$NETWORK_PASSPHRASE"
 echo "--------------------------------------------------------"
 echo "Add these variables to backend/.env and frontend/.env.local."
+

@@ -77,3 +77,4 @@ if (require.main === module) {
   fs.writeFileSync(outPath, JSON.stringify(data, null, 2), "utf-8");
   console.log(`Generated ${count} mock compliance records at ${outPath}`);
 }
+

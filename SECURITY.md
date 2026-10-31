@@ -34,7 +34,7 @@ The following are in scope:
 
 ### Mobile Key Storage
 
-The Flutter mobile app currently stores admin secret keys in Flutter Secure Storage (device keychain). This is a **known limitation** tracked in [issue #23](https://github.com/omolobamoyinoluwa-max/Stellar-Guard/issues/23).
+The Flutter mobile app currently stores admin secret keys in Flutter Secure Storage (device keychain). This is a **known limitation** tracked in [issue #23](https://github.com/Virelis/Stellar-Guard/issues/23).
 
 **Risk:** If a device is compromised, the stored secret key could be extracted.
 

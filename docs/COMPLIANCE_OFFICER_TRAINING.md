@@ -23,3 +23,4 @@ Welcome to the Stellar-Guard platform training program. This manual prepares com
 3. Open **Emergency Freeze** drawer, paste address, and describe legal reason.
 4. Reach out to peer trustee for secondary signature.
 5. Export PDF audit record for regulatory reporting (FinCEN, OFAC, BaFin).
+

@@ -84,3 +84,4 @@ export function ProposalTimelineDrawer({
     </div>
   );
 }
+

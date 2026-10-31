@@ -87,3 +87,4 @@ case "$TASK" in
     echo "Usage: ./scripts/task-runner.sh [build | test | lint | format | clean]"
     ;;
 esac
+

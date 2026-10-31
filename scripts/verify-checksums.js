@@ -85,3 +85,4 @@ if (require.main === module) {
 }
 
 module.exports = { calculateSha256, generateChecksums, verifyChecksums };
+
