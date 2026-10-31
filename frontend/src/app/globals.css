@@ -6,9 +6,9 @@
   --bg-primary: #f8fafc;
   --bg-surface: #ffffff;
   --bg-card: #f1f5f9;
-  --border-color: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --text-primary: #020617;
+  --text-secondary: #334155;
   --text-muted: #64748b;
   --accent-stellar: #6366f1;
   --accent-cyan: #06b6d4;
@@ -30,6 +30,13 @@
   --status-danger: #ef4444;
   --status-warning: #f59e0b;
   --status-success: #22c55e;
+}
+
+.high-contrast {
+  --border-color: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #f1f5f9;
+  filter: contrast(1.15);
 }
 
 body {
