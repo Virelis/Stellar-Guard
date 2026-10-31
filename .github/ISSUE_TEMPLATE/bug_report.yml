@@ -1,0 +1,53 @@
+name: 🐛 Bug Report
+description: Report an issue, defect, or unexpected behavior in Stellar-Guard
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue to Stellar-Guard! If this is a critical security vulnerability, please refer to our Security Policy rather than submitting a public issue.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of the Stellar-Guard platform is affected?
+      options:
+        - Soroban Smart Contracts (Rust)
+        - Backend API / Horizon Monitor (Node.js)
+        - Operator Governance Dashboard (Next.js)
+        - Shared Types / Client SDK
+        - CI/CD / Docker Infrastructure
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior.
+      placeholder: |
+        1. Start local sandbox via 'docker compose up'
+        2. Propose freeze for address GA7Q...
+        3. Submit approval signature from admin 2
+        4. See error...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen according to protocol specifications.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment Info
+      description: Browser, OS, Node version, Rust version, Stellar network (Testnet / Standalone / Mainnet).
+      placeholder: Node v20.18.0, Rust 1.81.0, Chrome 129, Testnet
