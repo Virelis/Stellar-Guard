@@ -1,24 +1,61 @@
-# Rust
+# Rust & Soroban
 target/
 test_snapshots/
-contracts/freeze-governance/test_snapshots/
-# Cargo.lock is intentionally tracked for binary/contract crates
+contracts/*/test_snapshots/
+Cargo.lock.bak
 
-# Node
+# Node & Workspace Build Artifacts
 node_modules/
 dist/
+build/
+out/
 .next/
+*.tsbuildinfo
+
+# Test Coverage & Reporting
+coverage/
+.nyc_output/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.env
 !*.env.example
+*.pem
+*.key
 
-# Flutter
+# SQLite Databases & WAL Logs
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Flutter / Mobile
 mobile/.dart_tool/
 mobile/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/pubspec.lock
 
-# Misc
-.DS_Store
+# Logs & Debuggers
 *.log
-*.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System & IDE Artifacts
+.DS_Store
+Thumbs.db
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vercel/
+.turbo/
