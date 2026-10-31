@@ -94,7 +94,7 @@ export function SessionInactivityWatcher({
             onClick={() => resetTimers()}
             className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-colors"
           >
-            I'm Still Here
+            I&apos;m Still Here
           </button>
           <button
             onClick={() => {
