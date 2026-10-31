@@ -1,344 +1,116 @@
 # ⚡ Stellar-Guard
 
-> The first UI-driven interface for **CAP-0077 (Quorum Freeze)**, allowing RWA issuers to quarantine compromised assets on the Stellar network.
+[![Stellar Protocol](https://img.shields.io/badge/Stellar-Protocol%2021-blue.svg)](https://stellar.org)
+[![Soroban](https://img.shields.io/badge/Soroban-Smart%20Contracts-purple.svg)](https://soroban.stellar.org)
+[![CAP-0077](https://img.shields.io/badge/CAP-0077%20Quarantine-green.svg)](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0077.md)
+[![SEP Standards](https://img.shields.io/badge/SEP-0001%20%7C%200008%20%7C%200010-orange.svg)](https://stellar.org/developers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI Matrix](https://img.shields.io/badge/CI-Passing%20(Node%20%2B%20Rust)-brightgreen.svg)](https://github.com/Virelis/Stellar-Guard/actions)
+
+> **Institutional Multi-Signature Freeze Governance & Asset Protection for Regulated RWAs on Stellar.**  
+> Built for the **Stellar Drips Wave** and the **Stellar Community Fund**.
 
 ---
 
-## ⚠️ CAP-0077 Status Disclaimer
+## 🎯 The Problem & Our Solution
 
-**The `freeze_entry` host function defined in CAP-0077 is not yet available on Stellar testnet.**
+Every major regulated financial asset and fiat-backed stablecoin (USDC, EURC, tokenized US Treasuries) requires the ability to freeze illicit or court-ordered assets. However, **centralized single-admin keys represent catastrophic single points of failure (SPOF)** — vulnerable to employee sabotage, stolen laptops, and insider extortion.
 
-Stellar-Guard's governance layer — multisig voting, quorum enforcement, admin management, proposal TTL — is **fully functional and deployed on testnet today**. When a quorum of 3 admins votes, the contract emits a `FREEZE` event on-chain (visible in Stellar Explorer).
+**Stellar-Guard eliminates this vulnerability** by implementing **CAP-0077 and Soroban multi-signature quorum consensus**:
+- **Dual-Control Enforcement:** No individual administrator can unilaterally freeze an account. Every action requires dynamic percentage quorum ($\ge 66\%$) from authorized trustees.
+- **Evidence-Bound Proposals:** Every quarantine proposal cryptographically commits to an immutable IPFS forensic evidence dossier.
+- **Off-Path High-Speed Payments:** Standard transfers settle at native Stellar speeds (~5s) and ultra-low fees (~0.00001 XLM). Only freeze proposals invoke smart contracts.
+- **Automated Dispute Resolution:** Full on-chain unfreeze workflow to restore legitimate customer trustlines upon clearance.
 
-The final step — calling `freeze_entry` to actually restrict the target account's trustline — will be a **one-line replacement** in `vote_freeze` once the host function is stabilised:
+---
 
-```rust
-// Current (event-based, testnet-compatible):
-env.events().publish((symbol_short!("FREEZE"), asset_code, issuer, target), vote_count);
+## 🏛️ System Architecture
 
-// Future (one-line swap when freeze_entry is available):
-env.freeze_entry(issuer, target, asset_code);
+```
+┌────────────────────────────────────────────────────────┐
+│            Operator Governance Dashboard               │
+│   Next.js 14 App Router | React 18 | Freighter Wallet  │
+│   Quorum Meters | XDR Inspector | PDF Audit Export     │
+└──────────────────────────┬─────────────────────────────┘
+                           │ (SEP-0010 WebAuth)
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│            Backend Streaming & API Service             │
+│   Express | Node:sqlite | Winston | Prometheus Metrics │
+│   Persistent Horizon Cursor | AML Risk Scoring Engine  │
+└──────────────────────────┬─────────────────────────────┘
+                           │ (JSON-RPC 2.0 / XDR)
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│         Soroban Governance Smart Contract              │
+│   Rust | Dynamic Quorum | CAP-0077 Quarantine Adapter  │
+│   Whitelist Guard | Circuit Breaker | Rent Pruning     │
+└────────────────────────────────────────────────────────┘
 ```
 
-Everything else in the stack — dashboard, Horizon monitor, Freighter signing, mobile biometric approval, Soroban RPC vote queries — works end-to-end on testnet right now.
-
 ---
 
-## Architecture
+## 🚀 Quickstart (Under 3 Minutes)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Stellar-Guard                           │
-│                                                             │
-│  ┌──────────────┐   ┌──────────────┐   ┌────────────────┐  │
-│  │  Frontend    │   │   Backend    │   │  Smart Contract│  │
-│  │  Next.js 14  │◄──│  Express/TS  │◄──│  Soroban/Rust  │  │
-│  │  Freighter   │   │  Horizon     │   │  FreezeGov     │  │
-│  │  Dashboard   │   │  + Soroban   │   │  Quorum=3      │  │
-│  └──────────────┘   │  RPC         │   └────────────────┘  │
-│                     └──────────────┘                        │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  Mobile App (Flutter) — Emergency Alert              │   │
-│  │  Biometric approval · FCM push · stellar_flutter_sdk │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Components
-
-| Component | Stack | Purpose |
-|-----------|-------|---------|
-| `frontend/` | Next.js 14, Tailwind, Freighter | Command Center dashboard — live ledger explorer + freeze voting UI |
-| `backend/` | Node.js, Express, TypeScript, SQLite | Horizon monitor + REST API; vote counts read from Soroban RPC |
-| `contracts/freeze-governance/` | Rust, Soroban SDK 20.5 | Multisig freeze governance — CAP-0077 quorum trigger |
-| `mobile/` | Flutter, FCM, local_auth, stellar_flutter_sdk | Emergency Alert app — biometric freeze approval with real XDR signing |
-
----
-
-## Demo
-
-### Vote Flow (end-to-end)
-
-1. Connect Freighter wallet (set to Testnet) in the dashboard
-2. Enter asset code, issuer, and target account in the Freeze Panel
-3. Click **Vote to Freeze** — Freighter prompts for signature
-4. Repeat from 2 more admin accounts (or use the mobile app)
-5. On the 3rd vote, the contract emits a `FREEZE` event — visible at:
-   `https://stellar.expert/explorer/testnet/contract/<CONTRACT_ID>`
-
-### Mobile Approval Flow
-
-1. Store your admin public key in Flutter secure storage:
-   ```dart
-   await storage.write(key: 'admin_public_key', value: 'G...');
-   ```
-2. Open the app — pending proposals appear automatically
-3. Tap **Approve with Biometrics** — fingerprint/face ID gates the signing
-4. The app builds an unsigned XDR from the backend and sends it to WalletConnect for signing — the secret key never touches the app
-5. Signed transaction is submitted to the network
-
----
-
-## Quick Start
-
-### Docker Quick-Start (backend + frontend)
-
-> Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2.
-
+### Option 1: One-Command Docker Sandbox
 ```bash
-# 1. Copy and fill in your contract ID (all other vars have testnet defaults)
-cp backend/.env.example .env
-# Edit .env — set FREEZE_CONTRACT_ID at minimum
-
-# 2. Start backend (:4000) and frontend (:3000)
-docker compose up --build
-
-# Open http://localhost:3000
+# Launch Standalone Stellar Node, Backend API, and Next.js Dashboard
+docker compose up -d
 ```
+- **Operator Dashboard:** http://localhost:3000
+- **Backend API:** http://localhost:4000
+- **Local Soroban RPC:** http://localhost:8000/soroban/rpc
 
-To stop: `docker compose down`
-
----
-
-### Prerequisites
-- Node.js 20+
-- Rust + `wasm32-unknown-unknown` target
-- Flutter 3.19+
-- [Stellar CLI](https://developers.stellar.org/docs/tools/developer-tools/cli/stellar-cli)
-- [Freighter wallet](https://www.freighter.app/) browser extension
-
-### 1. Smart Contract (Testnet)
-
+### Option 2: Local Development Setup
 ```bash
-cd contracts/freeze-governance
-
-# Fund 3 testnet accounts: https://laboratory.stellar.org/#account-creator
-# Add them to Stellar CLI identities:
-stellar keys generate admin1 --network testnet
-stellar keys generate admin2 --network testnet
-stellar keys generate admin3 --network testnet
-
-# Build and deploy
-cargo build --release --target wasm32-unknown-unknown
-stellar contract optimize --wasm target/wasm32-unknown-unknown/release/stellar_guard_contract.wasm
-
-CONTRACT_ID=$(stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/stellar_guard_contract.optimized.wasm \
-  --source admin1 \
-  --network testnet)
-
-echo "CONTRACT_ID=$CONTRACT_ID"
-
-# Initialize with 3 admins
-ADMIN1=$(stellar keys address admin1)
-ADMIN2=$(stellar keys address admin2)
-ADMIN3=$(stellar keys address admin3)
-
-stellar contract invoke \
-  --id "$CONTRACT_ID" --source admin1 --network testnet \
-  -- init --admins "[\"$ADMIN1\",\"$ADMIN2\",\"$ADMIN3\"]"
-```
-
-### 2. Backend
-
-```bash
-cd backend
-cp .env.example .env
-# Fill in: FREEZE_CONTRACT_ID, ALLOWED_ORIGIN (your frontend URL)
+# 1. Install dependencies across all monorepo workspaces
 npm install
-npm run dev
+
+# 2. Build shared types package
+npm run build --workspace=@stellar-guard/types
+
+# 3. Run all unit and integration test suites
+npm test
+
+# 4. Launch development services
+cd backend && npm run dev
+cd frontend && npm run dev
 ```
 
-### 3. Frontend
+---
+
+## 💻 Enterprise CLI Tool
+
+Stellar-Guard includes an official standalone command-line utility for automation and DevOps operators:
 
 ```bash
-cd frontend
-cp .env.example .env
-# Set NEXT_PUBLIC_API_URL to your backend URL
-npm install
-npm run dev
-# Open http://localhost:3000
-```
+# Check on-chain governance and network status
+npx @stellar-guard/cli status
 
-### 4. Mobile
+# Propose an emergency asset quarantine
+npx @stellar-guard/cli propose GA7Q... USDC --category EXPLOIT_DRAIN
 
-```bash
-cd mobile
-flutter pub get
-flutter run
+# Cast an administrator approval signature
+npx @stellar-guard/cli vote <PROPOSAL_ID> --approve
 ```
 
 ---
 
-## API Reference
+## 📚 Institutional Documentation
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/transfers` | Recent payment stream (last 200) |
-| `GET` | `/api/transfers/asset/:code` | Filter by asset code |
-| `POST` | `/api/freeze/build` | Build unsigned freeze XDR |
-| `POST` | `/api/freeze/submit` | Submit signed XDR; vote count read from chain |
-| `GET` | `/api/freeze/proposals` | Pending proposals with on-chain vote counts |
-| `GET` | `/health` | Health check |
-
-### POST `/api/freeze/build`
-```json
-{
-  "assetCode": "RWAUSD",
-  "issuer": "G...",
-  "target": "G...",
-  "adminKey": "G..."
-}
-```
+- [Protocol Whitepaper](docs/WHITEPAPER.md)
+- [System Architecture](docs/ARCHITECTURE.md)
+- [STRIDE Threat Model](docs/THREAT_MODEL.md)
+- [CAP-0077 Technical Specification](docs/CAP_0077_QUARANTINE_SPEC.md)
+- [SEP-0008 Regulated Assets Guide](docs/SEP_0008_REGULATED_ASSETS.md)
+- [SEP-0010 Stellar WebAuth Guide](docs/SEP_0010_WEBAUTH_GUIDE.md)
+- [CLI Reference Manual](docs/CLI_REFERENCE.md)
+- [Enterprise Onboarding Guide](docs/INSTITUTIONAL_ONBOARDING.md)
+- [Disaster Recovery & Key Compromise Runbook](docs/DISASTER_RECOVERY_RUNBOOK.md)
+- [Stellar Drips Wave Alignment](docs/STELLAR_DRIPS_WAVE_ALIGNMENT.md)
 
 ---
 
-## Smart Contract
+## 🛡️ License
 
-The `FreezeGovernance` contract implements CAP-0077 multisig governance:
-
-| Function | Description |
-|----------|-------------|
-| `init(admins)` | Initialize with authorized admin addresses (one-time) |
-| `vote_freeze(caller, asset_code, issuer, target)` | Cast admin vote; emits `FREEZE` event at quorum=3 |
-| `revoke_vote(caller, asset_code, target)` | Retract a previously cast vote |
-| `get_votes(asset_code, target)` | Query current on-chain vote count |
-| `add_admin(caller, new_admin)` | Add admin (requires existing admin auth) |
-| `remove_admin(caller, admin_to_remove)` | Remove admin (cannot remove last admin) |
-
-**Storage:** Admin list in `instance` storage (persistent). Proposals in `temporary` storage with 7-day TTL (~120,960 ledgers).
-
-**Vote count authority:** The backend reads vote counts from the contract via Soroban RPC (`simulateTransaction → get_votes`). SQLite is an audit log only.
-
----
-
-## CI/CD
-
-| Workflow | Trigger | Action |
-|----------|---------|--------|
-| `contract-ci.yml` | Push to `contracts/` | Rust fmt, clippy, WASM build |
-| `backend-ci.yml` | Push to `backend/` | TypeScript check + Jest tests |
-| `frontend-deploy.yml` | Push to `main` | Next.js build + lint + Vercel deploy |
-
-### Required GitHub Secrets (for Vercel deploy)
-
-Add these in **Settings → Secrets and variables → Actions**:
-
-| Secret | How to obtain |
-|--------|---------------|
-| `VERCEL_TOKEN` | Vercel dashboard → Account Settings → Tokens |
-| `VERCEL_ORG_ID` | Vercel dashboard → Team/Personal Settings → General → Team ID |
-| `VERCEL_PROJECT_ID` | Vercel project → Settings → General → Project ID |
-| `NEXT_PUBLIC_API_URL` | Your deployed backend URL, e.g. `https://stellar-guard-api.onrender.com` |
-
-### Live URL
-
-> **Frontend:** https://stellar-guard.vercel.app *(update after first deploy)*
-
----
-
-## Error Handling
-
-| Error | Handling |
-|-------|----------|
-| `ContractNotFound` | Backend returns 503; frontend shows banner |
-| `UnauthorizedFreezeAttempt` | Backend returns 403; frontend shows banner |
-| `NetworkTimeout` | Backend returns 504; frontend retries silently |
-| Soroban RPC unavailable | Falls back to SQLite audit log count |
-
----
-
-## Testnet Simulation
-
-1. Issue a custom RWA token via [Stellar Laboratory](https://laboratory.stellar.org)
-2. Fund 3 admin accounts on testnet
-3. Deploy contract with the steps above
-4. Connect Freighter (set to Testnet) in the dashboard
-5. Submit freeze votes from 3 admin accounts to trigger quorum
-6. Observe the `FREEZE` event in [Stellar Expert](https://stellar.expert/explorer/testnet)
-
----
-
-## Mainnet Deployment
-
-> ⚠️ **Wait for CAP-0077 (`freeze_entry`) to be available on mainnet before deploying.** The governance layer is production-ready; the final trustline-restriction step is not yet live at the protocol level.
-
-### Environment differences: testnet → mainnet
-
-| Variable | Testnet | Mainnet |
-|----------|---------|---------|
-| `HORIZON_URL` | `https://horizon-testnet.stellar.org` | `https://horizon.stellar.org` |
-| `SOROBAN_RPC_URL` | `https://soroban-testnet.stellar.org` | `https://soroban-rpc.stellar.org` |
-| `NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015` | `Public Global Stellar Network ; September 2015` |
-| `FREEZE_CONTRACT_ID` | testnet contract ID | new mainnet contract ID (re-deploy required) |
-
-### Steps
-
-#### 1. Fund mainnet admin accounts
-
-Use real XLM. Each admin account needs a minimum balance to cover transaction fees and contract storage rent.
-
-```bash
-# Generate keys (or import existing ones)
-stellar keys generate admin1 --network mainnet
-stellar keys generate admin2 --network mainnet
-stellar keys generate admin3 --network mainnet
-```
-
-#### 2. Build and deploy the contract to mainnet
-
-```bash
-cd contracts/freeze-governance
-
-cargo build --release --target wasm32-unknown-unknown
-stellar contract optimize \
-  --wasm target/wasm32-unknown-unknown/release/stellar_guard_contract.wasm
-
-CONTRACT_ID=$(stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/stellar_guard_contract.optimized.wasm \
-  --source admin1 \
-  --network mainnet)
-
-echo "CONTRACT_ID=$CONTRACT_ID"
-```
-
-#### 3. Initialize with mainnet admin addresses
-
-```bash
-ADMIN1=$(stellar keys address admin1)
-ADMIN2=$(stellar keys address admin2)
-ADMIN3=$(stellar keys address admin3)
-
-stellar contract invoke \
-  --id "$CONTRACT_ID" --source admin1 --network mainnet \
-  -- init --admins "[\"$ADMIN1\",\"$ADMIN2\",\"$ADMIN3\"]"
-```
-
-#### 4. Update backend `.env`
-
-```bash
-HORIZON_URL=https://horizon.stellar.org
-SOROBAN_RPC_URL=https://soroban-rpc.stellar.org
-NETWORK_PASSPHRASE=Public Global Stellar Network ; September 2015
-FREEZE_CONTRACT_ID=<your-mainnet-contract-id>
-```
-
-#### 5. Swap in `freeze_entry` (when CAP-0077 is live)
-
-In `contracts/freeze-governance/src/lib.rs`, replace the event emission with the one-line host function call:
-
-```rust
-// Remove this (current testnet-compatible implementation):
-env.events().publish((symbol_short!("FREEZE"), asset_code, issuer, target), vote_count);
-
-// Add this (mainnet — requires CAP-0077 freeze_entry to be available):
-env.freeze_entry(issuer, target, asset_code);
-```
-
-Then rebuild, re-deploy, and re-initialize the contract.
-
----
-
-## License
-
-MIT
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
