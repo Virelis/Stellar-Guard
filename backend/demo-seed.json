@@ -1,0 +1,33 @@
+[
+  {
+    "id": "d92b1a8e-4f11-4792-bc10-9284fae1011a",
+    "target": "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVAAA",
+    "assetCode": "USDC",
+    "proposer": "GBNDL7H7L5B2M77EQV6W32R3W6K47D2P25G5CVL45C4QZQ3R6T2QBAAA",
+    "category": "AML_HIGH_RISK",
+    "incidentUri": "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/case-101",
+    "votes": [
+      "GBNDL7H7L5B2M77EQV6W32R3W6K47D2P25G5CVL45C4QZQ3R6T2QBAAA"
+    ],
+    "currentVotes": 1,
+    "requiredQuorum": 2,
+    "status": "PENDING_QUORUM",
+    "createdAt": 1793406327654
+  },
+  {
+    "id": "f48c21a0-9c22-4a11-8842-1184fae9922c",
+    "target": "GC3K5B632KM5L4XQOAZ3W2K4D2P25G5CVL45C4QZQ3R6T2QBAAAMCAAA",
+    "assetCode": "EURC",
+    "proposer": "GBNDL7H7L5B2M77EQV6W32R3W6K47D2P25G5CVL45C4QZQ3R6T2QBAAA",
+    "category": "EXPLOIT_DRAIN",
+    "incidentUri": "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/case-102",
+    "votes": [
+      "GBNDL7H7L5B2M77EQV6W32R3W6K47D2P25G5CVL45C4QZQ3R6T2QBAAA",
+      "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVAAA"
+    ],
+    "currentVotes": 2,
+    "requiredQuorum": 2,
+    "status": "EXECUTED",
+    "createdAt": 1793402727654
+  }
+]
