@@ -1,5 +1,5 @@
-use soroban_sdk::{symbol_short, Address, Env, String};
 use crate::Error;
+use soroban_sdk::{symbol_short, Address, Env, String};
 
 /// CAP-0077: Stellar Core Protocol-level balance quarantine adapter.
 /// Abstracts Soroban contract interactions with classic Stellar balance flags,
@@ -15,7 +15,11 @@ impl Cap0077Adapter {
         target: &Address,
     ) -> Result<(), Error> {
         env.events().publish(
-            (symbol_short!("CAP0077"), symbol_short!("QUARANT"), target.clone()),
+            (
+                symbol_short!("CAP0077"),
+                symbol_short!("QUARANT"),
+                target.clone(),
+            ),
             (asset_code.clone(), issuer.clone()),
         );
         Ok(())
@@ -29,7 +33,11 @@ impl Cap0077Adapter {
         target: &Address,
     ) -> Result<(), Error> {
         env.events().publish(
-            (symbol_short!("CAP0077"), symbol_short!("RELEASE"), target.clone()),
+            (
+                symbol_short!("CAP0077"),
+                symbol_short!("RELEASE"),
+                target.clone(),
+            ),
             (asset_code.clone(), issuer.clone()),
         );
         Ok(())

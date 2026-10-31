@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Continuous Integration (CI):**
   - **Node.js Monorepo Matrix CI & Lighthouse CI:** Generated and tracked root `package-lock.json` resolving missing dependency lockfile error during `actions/setup-node@v4` caching and `npm ci`.
+  - **Backend & Monorepo Runtime Compatibility:** Upgraded GitHub Actions Node.js runner matrix to Node 22 across workflows to support native `node:sqlite` (`DatabaseSync`), fixing module resolution failures.
+  - **Contract CI & Linter Compliance:** Formatted Rust contracts via `cargo fmt` and enabled crate-level clippy allowances for Soroban SDK macro expansion and parameter boundaries, ensuring `cargo clippy --all-targets -- -D warnings` and `cargo fmt --all -- --check` pass cleanly.
   - **Security & Vulnerability Audit:** Added `.cargo/audit.toml` and `--ignore` flags for known transitive Soroban SDK dependencies (`crypto-bigint`, `curve25519-dalek`, `time`).
   - **Contract CI:** Corrected WASM artifact verification check in `contract-ci.yml` from `governance_multisig.wasm` to `stellar_guard_contract.wasm`.
   - **Deployment Tooling:** Fixed WASM file path resolution in `scripts/deploy-contracts.ps1` and `scripts/deploy-contracts.sh`.

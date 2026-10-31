@@ -10,3 +10,4 @@ ignore = [
     "RUSTSEC-2024-0436", # paste unmaintained warning in transitive macro dependencies
     "RUSTSEC-2026-0097", # rand unsound with custom logger warning in transitive dependencies
 ]
+

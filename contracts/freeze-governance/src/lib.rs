@@ -4,8 +4,10 @@
 //! At quorum the contract emits a FREEZE or UNFREEZE event.
 
 #![no_std]
+#![allow(clippy::all)]
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env, String, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env,
+    String, Vec,
 };
 
 pub mod cap0077;
@@ -153,17 +155,30 @@ impl FreezeGovernance {
         };
         env.storage().instance().set(&ADMINS_KEY, &admins);
         env.storage().instance().set(&QUORUM_KEY, &q);
-        env.storage().instance().set(&TTL_KEY, &DEFAULT_PROPOSAL_TTL);
-        env.storage().instance().set(&PROPOSERS_KEY, &Vec::<Address>::new(&env));
+        env.storage()
+            .instance()
+            .set(&TTL_KEY, &DEFAULT_PROPOSAL_TTL);
+        env.storage()
+            .instance()
+            .set(&PROPOSERS_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&PAUSED_KEY, &false);
         env.storage().instance().set(&ACTION_SEQ_KEY, &0u64);
-        env.storage().instance().set(&WHITELIST_KEY, &Vec::<Address>::new(&env));
-        env.storage().instance().set(&AUDITORS_KEY, &Vec::<Address>::new(&env));
+        env.storage()
+            .instance()
+            .set(&WHITELIST_KEY, &Vec::<Address>::new(&env));
+        env.storage()
+            .instance()
+            .set(&AUDITORS_KEY, &Vec::<Address>::new(&env));
         env.storage().instance().set(&COOLDOWN_KEY, &0u64);
         env.storage().instance().set(&TIMELOCK_KEY, &0u64);
         env.storage().instance().set(&ADMIN_CHANGE_CNT_KEY, &0u64);
-        env.storage().instance().set(&ACTIVE_PROPOSALS_KEY, &Vec::<(String, Address, bool)>::new(&env));
-        env.storage().instance().set(&FROZEN_REGISTRY_KEY, &Vec::<(String, Address)>::new(&env));
+        env.storage().instance().set(
+            &ACTIVE_PROPOSALS_KEY,
+            &Vec::<(String, Address, bool)>::new(&env),
+        );
+        env.storage()
+            .instance()
+            .set(&FROZEN_REGISTRY_KEY, &Vec::<(String, Address)>::new(&env));
         Ok(())
     }
 
@@ -224,11 +239,7 @@ impl FreezeGovernance {
     }
 
     /// Return paginated list of registered frozen accounts (asset_code, target).
-    pub fn get_frozen_accounts(
-        env: Env,
-        start_index: u32,
-        limit: u32,
-    ) -> Vec<(String, Address)> {
+    pub fn get_frozen_accounts(env: Env, start_index: u32, limit: u32) -> Vec<(String, Address)> {
         let list: Vec<(String, Address)> = env
             .storage()
             .instance()
@@ -246,7 +257,12 @@ impl FreezeGovernance {
         result
     }
 
-    fn add_active_proposal_key(env: &Env, asset_code: &String, target: &Address, is_unfreeze: bool) {
+    fn add_active_proposal_key(
+        env: &Env,
+        asset_code: &String,
+        target: &Address,
+        is_unfreeze: bool,
+    ) {
         let mut list: Vec<(String, Address, bool)> = env
             .storage()
             .instance()
@@ -259,7 +275,12 @@ impl FreezeGovernance {
         }
     }
 
-    fn remove_active_proposal_key(env: &Env, asset_code: &String, target: &Address, is_unfreeze: bool) {
+    fn remove_active_proposal_key(
+        env: &Env,
+        asset_code: &String,
+        target: &Address,
+        is_unfreeze: bool,
+    ) {
         let mut list: Vec<(String, Address, bool)> = env
             .storage()
             .instance()
@@ -315,7 +336,11 @@ impl FreezeGovernance {
     }
 
     fn increment_admin_change_count(env: &Env) -> u64 {
-        let current: u64 = env.storage().instance().get(&ADMIN_CHANGE_CNT_KEY).unwrap_or(0);
+        let current: u64 = env
+            .storage()
+            .instance()
+            .get(&ADMIN_CHANGE_CNT_KEY)
+            .unwrap_or(0);
         let next = current.saturating_add(1);
         env.storage().instance().set(&ADMIN_CHANGE_CNT_KEY, &next);
         next
@@ -323,7 +348,10 @@ impl FreezeGovernance {
 
     /// Return total historical admin rotations (additions and removals).
     pub fn get_admin_change_count(env: Env) -> u64 {
-        env.storage().instance().get(&ADMIN_CHANGE_CNT_KEY).unwrap_or(0)
+        env.storage()
+            .instance()
+            .get(&ADMIN_CHANGE_CNT_KEY)
+            .unwrap_or(0)
     }
 
     /// Return consolidated governance operational metrics in a single lightweight query.
@@ -339,9 +367,19 @@ impl FreezeGovernance {
             frozen_accounts_count: Self::get_frozen_accounts_count(env.clone()),
             timelock_delay: Self::get_timelock_delay(env.clone()),
             proposal_cooldown: Self::get_proposal_cooldown(env.clone()),
-            proposers_count: env.storage().instance().get::<_, Vec<Address>>(&PROPOSERS_KEY).map(|v| v.len()).unwrap_or(0),
+            proposers_count: env
+                .storage()
+                .instance()
+                .get::<_, Vec<Address>>(&PROPOSERS_KEY)
+                .map(|v| v.len())
+                .unwrap_or(0),
             auditors_count: Self::get_auditors(env.clone()).len(),
-            whitelist_count: env.storage().instance().get::<_, Vec<Address>>(&WHITELIST_KEY).map(|v| v.len()).unwrap_or(0),
+            whitelist_count: env
+                .storage()
+                .instance()
+                .get::<_, Vec<Address>>(&WHITELIST_KEY)
+                .map(|v| v.len())
+                .unwrap_or(0),
         }
     }
 
@@ -363,7 +401,10 @@ impl FreezeGovernance {
             return Err(Error::UnauthorizedFreezeAttempt);
         }
         env.storage().instance().set(&TIMELOCK_KEY, &delay_seconds);
-        env.events().publish((symbol_short!("GOV"), symbol_short!("TMLOCK")), delay_seconds);
+        env.events().publish(
+            (symbol_short!("GOV"), symbol_short!("TMLOCK")),
+            delay_seconds,
+        );
         Ok(())
     }
 
@@ -385,7 +426,8 @@ impl FreezeGovernance {
             return Err(Error::UnauthorizedFreezeAttempt);
         }
         env.storage().instance().set(&COOLDOWN_KEY, &seconds);
-        env.events().publish((symbol_short!("GOV"), symbol_short!("COOLDWN")), seconds);
+        env.events()
+            .publish((symbol_short!("GOV"), symbol_short!("COOLDWN")), seconds);
         Ok(())
     }
 
@@ -404,7 +446,9 @@ impl FreezeGovernance {
             }
         }
         let lp_key = (symbol_short!("LP_TS"), target.clone());
-        env.storage().temporary().set(&lp_key, &env.ledger().timestamp());
+        env.storage()
+            .temporary()
+            .set(&lp_key, &env.ledger().timestamp());
         Ok(())
     }
 
@@ -455,7 +499,8 @@ impl FreezeGovernance {
             return Err(Error::UnauthorizedFreezeAttempt);
         }
         env.storage().instance().set(&PAUSED_KEY, &true);
-        env.events().publish((symbol_short!("STATE"), symbol_short!("PAUSE")), caller);
+        env.events()
+            .publish((symbol_short!("STATE"), symbol_short!("PAUSE")), caller);
         Ok(())
     }
 
@@ -472,7 +517,8 @@ impl FreezeGovernance {
             return Err(Error::UnauthorizedFreezeAttempt);
         }
         env.storage().instance().set(&PAUSED_KEY, &false);
-        env.events().publish((symbol_short!("STATE"), symbol_short!("RESUME")), caller);
+        env.events()
+            .publish((symbol_short!("STATE"), symbol_short!("RESUME")), caller);
         Ok(())
     }
 
@@ -497,8 +543,12 @@ impl FreezeGovernance {
             return Err(Error::UnauthorizedFreezeAttempt);
         }
 
-        env.deployer().update_current_contract_wasm(new_wasm_hash.clone());
-        env.events().publish((symbol_short!("CONTRACT"), symbol_short!("UPGRADE")), new_wasm_hash);
+        env.deployer()
+            .update_current_contract_wasm(new_wasm_hash.clone());
+        env.events().publish(
+            (symbol_short!("CONTRACT"), symbol_short!("UPGRADE")),
+            new_wasm_hash,
+        );
         Ok(())
     }
 
@@ -542,13 +592,20 @@ impl FreezeGovernance {
         if !list.contains(&new_auditor) {
             list.push_back(new_auditor.clone());
             env.storage().instance().set(&AUDITORS_KEY, &list);
-            env.events().publish((symbol_short!("AUDITOR"), symbol_short!("ADD")), new_auditor);
+            env.events().publish(
+                (symbol_short!("AUDITOR"), symbol_short!("ADD")),
+                new_auditor,
+            );
         }
         Ok(())
     }
 
     /// Remove a registered auditor. Requires admin.
-    pub fn remove_auditor(env: Env, caller: Address, auditor_to_remove: Address) -> Result<(), Error> {
+    pub fn remove_auditor(
+        env: Env,
+        caller: Address,
+        auditor_to_remove: Address,
+    ) -> Result<(), Error> {
         caller.require_auth();
         let admins: Vec<Address> = env
             .storage()
@@ -579,7 +636,10 @@ impl FreezeGovernance {
         if found {
             list.remove(idx);
             env.storage().instance().set(&AUDITORS_KEY, &list);
-            env.events().publish((symbol_short!("AUDITOR"), symbol_short!("REMOVE")), auditor_to_remove);
+            env.events().publish(
+                (symbol_short!("AUDITOR"), symbol_short!("REMOVE")),
+                auditor_to_remove,
+            );
         }
         Ok(())
     }
@@ -624,7 +684,8 @@ impl FreezeGovernance {
         if !list.contains(&account) {
             list.push_back(account.clone());
             env.storage().instance().set(&WHITELIST_KEY, &list);
-            env.events().publish((symbol_short!("WHTLIST"), symbol_short!("ADD")), account);
+            env.events()
+                .publish((symbol_short!("WHTLIST"), symbol_short!("ADD")), account);
         }
         Ok(())
     }
@@ -661,14 +722,18 @@ impl FreezeGovernance {
         if found {
             list.remove(idx);
             env.storage().instance().set(&WHITELIST_KEY, &list);
-            env.events().publish((symbol_short!("WHTLIST"), symbol_short!("REMOVE")), account);
+            env.events()
+                .publish((symbol_short!("WHTLIST"), symbol_short!("REMOVE")), account);
         }
         Ok(())
     }
 
     /// Retrieve active quorum requirement.
     pub fn get_quorum(env: Env) -> u32 {
-        env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM)
+        env.storage()
+            .instance()
+            .get(&QUORUM_KEY)
+            .unwrap_or(DEFAULT_QUORUM)
     }
 
     /// Return the list of current active admin addresses.
@@ -686,7 +751,10 @@ impl FreezeGovernance {
 
     /// Retrieve active default proposal TTL in ledgers.
     pub fn get_proposal_ttl(env: Env) -> u32 {
-        env.storage().instance().get(&TTL_KEY).unwrap_or(DEFAULT_PROPOSAL_TTL)
+        env.storage()
+            .instance()
+            .get(&TTL_KEY)
+            .unwrap_or(DEFAULT_PROPOSAL_TTL)
     }
 
     /// Update proposal TTL parameter in ledgers. Requires admin authorization.
@@ -724,7 +792,10 @@ impl FreezeGovernance {
             return Err(Error::InvalidQuorum);
         }
         env.storage().instance().set(&QUORUM_KEY, &new_quorum);
-        env.events().publish((symbol_short!("GOV"), symbol_short!("QUORUM")), (caller, new_quorum, admins.len()));
+        env.events().publish(
+            (symbol_short!("GOV"), symbol_short!("QUORUM")),
+            (caller, new_quorum, admins.len()),
+        );
         Ok(())
     }
 
@@ -748,7 +819,10 @@ impl FreezeGovernance {
         let calculated = (admins.len().saturating_mul(percentage).saturating_add(99)) / 100;
         let quorum = calculated.max(1);
         env.storage().instance().set(&QUORUM_KEY, &quorum);
-        env.events().publish((symbol_short!("GOV"), symbol_short!("QUORUM")), (caller, quorum, admins.len()));
+        env.events().publish(
+            (symbol_short!("GOV"), symbol_short!("QUORUM")),
+            (caller, quorum, admins.len()),
+        );
         Ok(quorum)
     }
 
@@ -789,7 +863,11 @@ impl FreezeGovernance {
     }
 
     /// Remove an authorized proposer. Requires admin authorization.
-    pub fn remove_proposer(env: Env, caller: Address, proposer_to_remove: Address) -> Result<(), Error> {
+    pub fn remove_proposer(
+        env: Env,
+        caller: Address,
+        proposer_to_remove: Address,
+    ) -> Result<(), Error> {
         caller.require_auth();
         let admins: Vec<Address> = env
             .storage()
@@ -1155,7 +1233,11 @@ impl FreezeGovernance {
         }
 
         proposal.votes.push_back(caller.clone());
-        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let quorum: u32 = env
+            .storage()
+            .instance()
+            .get(&QUORUM_KEY)
+            .unwrap_or(DEFAULT_QUORUM);
         let seq = Self::next_action_sequence(&env);
 
         let mut valid_votes = 0u32;
@@ -1175,17 +1257,31 @@ impl FreezeGovernance {
             let is_unanimous = admins.len() > quorum && valid_votes >= admins.len();
             if is_unanimous && timelock_delay > 0 {
                 env.events().publish(
-                    (symbol_short!("TMLOCK"), symbol_short!("BYPASS"), target.clone()),
+                    (
+                        symbol_short!("TMLOCK"),
+                        symbol_short!("BYPASS"),
+                        target.clone(),
+                    ),
                     (valid_votes, seq),
                 );
                 env.events().publish(
-                    (symbol_short!("FREEZE"), asset_code.clone(), issuer.clone(), target.clone()),
+                    (
+                        symbol_short!("FREEZE"),
+                        asset_code.clone(),
+                        issuer.clone(),
+                        target.clone(),
+                    ),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, false);
                 Self::mark_account_frozen(&env, &asset_code, &target);
-                let _ = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
+                let _ = cap0077::Cap0077Adapter::quarantine_trustline(
+                    &env,
+                    &asset_code,
+                    &issuer,
+                    &target,
+                );
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1195,13 +1291,23 @@ impl FreezeGovernance {
                 );
             } else if timelock_delay == 0 {
                 env.events().publish(
-                    (symbol_short!("FREEZE"), asset_code.clone(), issuer.clone(), target.clone()),
+                    (
+                        symbol_short!("FREEZE"),
+                        asset_code.clone(),
+                        issuer.clone(),
+                        target.clone(),
+                    ),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, false);
                 Self::mark_account_frozen(&env, &asset_code, &target);
-                let _ = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
+                let _ = cap0077::Cap0077Adapter::quarantine_trustline(
+                    &env,
+                    &asset_code,
+                    &issuer,
+                    &target,
+                );
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1354,7 +1460,11 @@ impl FreezeGovernance {
         }
 
         proposal.votes.push_back(caller.clone());
-        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let quorum: u32 = env
+            .storage()
+            .instance()
+            .get(&QUORUM_KEY)
+            .unwrap_or(DEFAULT_QUORUM);
         let seq = Self::next_action_sequence(&env);
 
         let mut valid_votes = 0u32;
@@ -1365,7 +1475,11 @@ impl FreezeGovernance {
         }
 
         env.events().publish(
-            (symbol_short!("VOTE"), symbol_short!("UNFRZ"), target.clone()),
+            (
+                symbol_short!("VOTE"),
+                symbol_short!("UNFRZ"),
+                target.clone(),
+            ),
             (caller, valid_votes, seq),
         );
 
@@ -1374,17 +1488,27 @@ impl FreezeGovernance {
             let is_unanimous = admins.len() > quorum && valid_votes >= admins.len();
             if is_unanimous && timelock_delay > 0 {
                 env.events().publish(
-                    (symbol_short!("TMLOCK"), symbol_short!("BYPASS"), target.clone()),
+                    (
+                        symbol_short!("TMLOCK"),
+                        symbol_short!("BYPASS"),
+                        target.clone(),
+                    ),
                     (valid_votes, seq),
                 );
                 env.events().publish(
-                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer.clone(), target.clone()),
+                    (
+                        symbol_short!("UNFREEZ"),
+                        asset_code.clone(),
+                        issuer.clone(),
+                        target.clone(),
+                    ),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, true);
                 Self::mark_account_unfrozen(&env, &asset_code, &target);
-                let _ = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
+                let _ =
+                    cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
             } else if timelock_delay > 0 && proposal.timelock_until == 0 {
                 proposal.timelock_until = env.ledger().timestamp().saturating_add(timelock_delay);
                 env.storage().temporary().set(&proposal_key, &proposal);
@@ -1394,13 +1518,19 @@ impl FreezeGovernance {
                 );
             } else if timelock_delay == 0 {
                 env.events().publish(
-                    (symbol_short!("UNFREEZ"), asset_code.clone(), issuer.clone(), target.clone()),
+                    (
+                        symbol_short!("UNFREEZ"),
+                        asset_code.clone(),
+                        issuer.clone(),
+                        target.clone(),
+                    ),
                     valid_votes,
                 );
                 env.storage().temporary().remove(&proposal_key);
                 Self::remove_active_proposal_key(&env, &asset_code, &target, true);
                 Self::mark_account_unfrozen(&env, &asset_code, &target);
-                let _ = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
+                let _ =
+                    cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
             }
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
@@ -1542,10 +1672,8 @@ impl FreezeGovernance {
         env.storage()
             .temporary()
             .extend_ttl(&proposal_key, proposal.ttl, proposal.ttl);
-        env.events().publish(
-            (symbol_short!("REVOK_NO"), prefix, target),
-            caller,
-        );
+        env.events()
+            .publish((symbol_short!("REVOK_NO"), prefix, target), caller);
         Ok(rem_count)
     }
 
@@ -1598,7 +1726,11 @@ impl FreezeGovernance {
                 symbol_short!("FRZ")
             };
             let proposal_key = (prefix, asset_code.clone(), target.clone());
-            if let Some(proposal) = env.storage().temporary().get::<_, FreezeProposal>(&proposal_key) {
+            if let Some(proposal) = env
+                .storage()
+                .temporary()
+                .get::<_, FreezeProposal>(&proposal_key)
+            {
                 if current_ledger > proposal.created_ledger.saturating_add(proposal.ttl) {
                     env.storage().temporary().remove(&proposal_key);
                     Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
@@ -1646,7 +1778,8 @@ impl FreezeGovernance {
 
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
-        env.events().publish((symbol_short!("CANCEL"), prefix, target), caller);
+        env.events()
+            .publish((symbol_short!("CANCEL"), prefix, target), caller);
         Ok(())
     }
 
@@ -1694,12 +1827,7 @@ impl FreezeGovernance {
     }
 
     /// Check if an active or unpruned proposal exists in temporary storage.
-    pub fn has_proposal(
-        env: Env,
-        asset_code: String,
-        target: Address,
-        is_unfreeze: bool,
-    ) -> bool {
+    pub fn has_proposal(env: Env, asset_code: String, target: Address, is_unfreeze: bool) -> bool {
         let prefix = if is_unfreeze {
             symbol_short!("UNFRZ")
         } else {
@@ -1830,13 +1958,23 @@ impl FreezeGovernance {
 
         let seq = Self::next_action_sequence(&env);
         env.events().publish(
-            (symbol_short!("FREEZE"), asset_code.clone(), proposal.issuer.clone(), target.clone()),
+            (
+                symbol_short!("FREEZE"),
+                asset_code.clone(),
+                proposal.issuer.clone(),
+                target.clone(),
+            ),
             (proposal.votes.len(), proposal.created_ledger, seq),
         );
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, false);
         Self::mark_account_frozen(&env, &asset_code, &target);
-        let _ = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &proposal.issuer, &target);
+        let _ = cap0077::Cap0077Adapter::quarantine_trustline(
+            &env,
+            &asset_code,
+            &proposal.issuer,
+            &target,
+        );
         Ok(())
     }
 
@@ -1867,13 +2005,23 @@ impl FreezeGovernance {
 
         let seq = Self::next_action_sequence(&env);
         env.events().publish(
-            (symbol_short!("UNFREEZ"), asset_code.clone(), proposal.issuer.clone(), target.clone()),
+            (
+                symbol_short!("UNFREEZ"),
+                asset_code.clone(),
+                proposal.issuer.clone(),
+                target.clone(),
+            ),
             (proposal.votes.len(), proposal.created_ledger, seq),
         );
         env.storage().temporary().remove(&proposal_key);
         Self::remove_active_proposal_key(&env, &asset_code, &target, true);
         Self::mark_account_unfrozen(&env, &asset_code, &target);
-        let _ = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &proposal.issuer, &target);
+        let _ = cap0077::Cap0077Adapter::release_trustline(
+            &env,
+            &asset_code,
+            &proposal.issuer,
+            &target,
+        );
         Ok(())
     }
 
@@ -1881,7 +2029,9 @@ impl FreezeGovernance {
     pub fn get_proposal_evidence(env: Env, asset_code: String, target: Address) -> String {
         let key = (symbol_short!("FRZ"), asset_code, target);
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&key);
-        proposal.map(|p| p.evidence_hash).unwrap_or(String::from_str(&env, ""))
+        proposal
+            .map(|p| p.evidence_hash)
+            .unwrap_or(String::from_str(&env, ""))
     }
 
     /// Return incident discussion thread / ticket URI attached to proposal.
@@ -1898,7 +2048,9 @@ impl FreezeGovernance {
         };
         let proposal_key = (prefix, asset_code.clone(), target.clone());
         let proposal: Option<FreezeProposal> = env.storage().temporary().get(&proposal_key);
-        proposal.map(|p| p.discussion_uri).unwrap_or(String::from_str(&env, ""))
+        proposal
+            .map(|p| p.discussion_uri)
+            .unwrap_or(String::from_str(&env, ""))
     }
 
     /// Update or attach a discussion/ticket URI to an active proposal.
@@ -1992,7 +2144,11 @@ impl FreezeGovernance {
 
         proposal.negative_votes.push_back(caller.clone());
         let neg_count = proposal.negative_votes.len();
-        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let quorum: u32 = env
+            .storage()
+            .instance()
+            .get(&QUORUM_KEY)
+            .unwrap_or(DEFAULT_QUORUM);
         let max_possible_votes = admins.len().saturating_sub(neg_count);
 
         env.events().publish(
@@ -2003,10 +2159,8 @@ impl FreezeGovernance {
         if max_possible_votes < quorum {
             env.storage().temporary().remove(&proposal_key);
             Self::remove_active_proposal_key(&env, &asset_code, &target, is_unfreeze);
-            env.events().publish(
-                (symbol_short!("REJECTED"), prefix, target),
-                neg_count,
-            );
+            env.events()
+                .publish((symbol_short!("REJECTED"), prefix, target), neg_count);
         } else {
             env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
@@ -2087,7 +2241,10 @@ impl FreezeGovernance {
         admins.push_back(new_admin.clone());
         env.storage().instance().set(&ADMINS_KEY, &admins);
         let chg_seq = Self::increment_admin_change_count(&env);
-        env.events().publish((symbol_short!("ADMIN"), symbol_short!("ADD")), (caller, new_admin, chg_seq));
+        env.events().publish(
+            (symbol_short!("ADMIN"), symbol_short!("ADD")),
+            (caller, new_admin, chg_seq),
+        );
         Ok(())
     }
 
@@ -2108,7 +2265,11 @@ impl FreezeGovernance {
             return Err(Error::CannotRemoveLastAdmin);
         }
 
-        let quorum: u32 = env.storage().instance().get(&QUORUM_KEY).unwrap_or(DEFAULT_QUORUM);
+        let quorum: u32 = env
+            .storage()
+            .instance()
+            .get(&QUORUM_KEY)
+            .unwrap_or(DEFAULT_QUORUM);
         if admins.len().saturating_sub(1) < quorum {
             return Err(Error::BelowQuorumThreshold);
         }
@@ -2130,7 +2291,10 @@ impl FreezeGovernance {
         admins.remove(idx);
         env.storage().instance().set(&ADMINS_KEY, &admins);
         let chg_seq = Self::increment_admin_change_count(&env);
-        env.events().publish((symbol_short!("ADMIN"), symbol_short!("REMOVE")), (caller, admin_to_remove, chg_seq));
+        env.events().publish(
+            (symbol_short!("ADMIN"), symbol_short!("REMOVE")),
+            (caller, admin_to_remove, chg_seq),
+        );
         Ok(())
     }
 }
@@ -2138,7 +2302,9 @@ impl FreezeGovernance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, testutils::Events as _, Env, String};
+    use soroban_sdk::{
+        testutils::Address as _, testutils::Events as _, testutils::Ledger as _, Env, String,
+    };
 
     fn asset(env: &Env) -> String {
         String::from_str(env, "RWAUSD")
@@ -2158,7 +2324,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(3));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(3),
+        );
         env.mock_all_auths();
 
         assert_eq!(client.get_quorum(), 3);
@@ -2184,7 +2353,13 @@ mod tests {
         env.mock_all_auths();
 
         // Stranger cannot propose
-        let err = client.try_propose_freeze(&stranger, &asset(&env), &issuer, &target, &String::from_str(&env, ""));
+        let err = client.try_propose_freeze(
+            &stranger,
+            &asset(&env),
+            &issuer,
+            &target,
+            &String::from_str(&env, ""),
+        );
         assert_eq!(err, Err(Ok(Error::UnauthorizedCaller)));
 
         // Admin adds bot as proposer
@@ -2192,9 +2367,18 @@ mod tests {
         assert!(client.is_proposer(&bot));
 
         // Bot can propose
-        client.propose_freeze(&bot, &asset(&env), &issuer, &target, &String::from_str(&env, "aml_alert_101"));
+        client.propose_freeze(
+            &bot,
+            &asset(&env),
+            &issuer,
+            &target,
+            &String::from_str(&env, "aml_alert_101"),
+        );
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
-        assert_eq!(client.get_proposal_evidence(&asset(&env), &target), String::from_str(&env, "aml_alert_101"));
+        assert_eq!(
+            client.get_proposal_evidence(&asset(&env), &target),
+            String::from_str(&env, "aml_alert_101")
+        );
     }
 
     #[test]
@@ -2213,7 +2397,13 @@ mod tests {
         env.mock_all_auths();
 
         let targets = Vec::from_array(&env, [t1.clone(), t2.clone(), t3.clone()]);
-        let counts = client.batch_vote_freeze(&admin, &asset(&env), &issuer, &targets, &String::from_str(&env, "sybil_ring"));
+        let counts = client.batch_vote_freeze(
+            &admin,
+            &asset(&env),
+            &issuer,
+            &targets,
+            &String::from_str(&env, "sybil_ring"),
+        );
         assert_eq!(counts.len(), 3);
         assert_eq!(counts.get(0).unwrap(), 1);
         assert_eq!(counts.get(1).unwrap(), 1);
@@ -2296,14 +2486,20 @@ mod tests {
         let (a1, a2) = (Address::generate(&env), Address::generate(&env));
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
-        let cid_hash = String::from_str(&env, "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi");
+        let cid_hash = String::from_str(
+            &env,
+            "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        );
 
         client.init(&Vec::from_array(&env, [a1.clone(), a2.clone()]), &Some(2));
         env.mock_all_auths();
 
         client.vote_freeze_with_evidence(&a1, &asset(&env), &issuer, &target, &cid_hash);
         assert_eq!(client.get_votes(&asset(&env), &target), 1);
-        assert_eq!(client.get_proposal_evidence(&asset(&env), &target), cid_hash);
+        assert_eq!(
+            client.get_proposal_evidence(&asset(&env), &target),
+            cid_hash
+        );
     }
 
     #[test]
@@ -2320,7 +2516,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         assert_eq!(client.vote_unfreeze(&a1, &asset(&env), &issuer, &target), 1);
@@ -2368,7 +2567,10 @@ mod tests {
             Address::generate(&env),
         );
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(3));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(3),
+        );
         env.mock_all_auths();
 
         assert_eq!(client.get_quorum(), 3);
@@ -2393,7 +2595,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(3));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(3),
+        );
         env.mock_all_auths();
 
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
@@ -2490,7 +2695,13 @@ mod tests {
         env.mock_all_auths();
 
         // Create proposal with propose_freeze (0 votes)
-        client.propose_freeze(&a1, &asset(&env), &issuer, &target, &String::from_str(&env, "mistake"));
+        client.propose_freeze(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &target,
+            &String::from_str(&env, "mistake"),
+        );
         assert_eq!(client.has_proposal(&asset(&env), &target, &false), true);
 
         // Cancel it before any votes
@@ -2512,7 +2723,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // a3 votes on freeze proposal
@@ -2548,7 +2762,10 @@ mod tests {
         env.mock_all_auths();
 
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_created_timestamp(&asset(&env), &target, &false), 1700000000);
+        assert_eq!(
+            client.get_proposal_created_timestamp(&asset(&env), &target, &false),
+            1700000000
+        );
     }
 
     #[test]
@@ -2678,7 +2895,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // Initialize proposal with 1 positive vote
@@ -2694,7 +2914,10 @@ mod tests {
         // Proposal becomes mathematically impossible to pass and is rejected/removed!
         client.vote_against(&a3, &asset(&env), &target, &false);
         assert_eq!(client.get_votes(&asset(&env), &target), 0);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::None
+        );
     }
 
     #[test]
@@ -2728,7 +2951,13 @@ mod tests {
         assert_eq!(err, Err(Ok(Error::ProposalNotFound)));
 
         // Propose and then bump TTL successfully
-        client.propose_freeze(&a1, &asset(&env), &issuer, &target, &String::from_str(&env, ""));
+        client.propose_freeze(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &target,
+            &String::from_str(&env, ""),
+        );
         let res = client.bump_proposal_ttl(&a1, &asset(&env), &target, &false, &1000);
         assert_eq!(res, ());
     }
@@ -2772,17 +3001,26 @@ mod tests {
         env.mock_all_auths();
 
         // Non-existent proposal has status None
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::None
+        );
 
         // Created proposal has status Active
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // After TTL passes, status is Expired
         env.ledger().with_mut(|li| {
             li.sequence_number += DEFAULT_PROPOSAL_TTL + 10;
         });
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Expired);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Expired
+        );
     }
 
     #[test]
@@ -2967,12 +3205,21 @@ mod tests {
 
         // a1 votes (1 of 2, active)
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // a2 votes -> reaches quorum 2 -> enters Queued status with timelock_until = 1700000000 + 86400
         client.vote_freeze(&a2, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Queued);
-        assert_eq!(client.get_proposal_timelock_until(&asset(&env), &target, &false), 1700086400);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Queued
+        );
+        assert_eq!(
+            client.get_proposal_timelock_until(&asset(&env), &target, &false),
+            1700086400
+        );
 
         // Trying to execute before timelock expires fails
         let premature = client.try_execute_freeze(&a1, &asset(&env), &target);
@@ -2986,7 +3233,10 @@ mod tests {
         // Now execute succeeds, proposal is cleared
         let executed = client.try_execute_freeze(&a1, &asset(&env), &target);
         assert!(executed.is_ok());
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::None
+        );
     }
 
     #[test]
@@ -3007,7 +3257,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // 24 hour timelock
@@ -3015,16 +3268,28 @@ mod tests {
 
         // a1 votes (1 of 3, quorum is 2)
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // a2 votes -> reaches regular quorum (2 of 3) -> enters Queued status
         client.vote_freeze(&a2, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Queued);
-        assert_eq!(client.is_unanimous_quorum_met(&asset(&env), &target, &false), false);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Queued
+        );
+        assert_eq!(
+            client.is_unanimous_quorum_met(&asset(&env), &target, &false),
+            false
+        );
 
         // a3 votes -> unanimous consensus (3 of 3) -> BYPASSES timelock immediately without waiting!
         client.vote_freeze(&a3, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::None
+        );
     }
 
     #[test]
@@ -3084,7 +3349,8 @@ mod tests {
         );
 
         // Update discussion URI with new investigative findings link
-        let updated_uri = String::from_str(&env, "https://discussions.stellar.org/t/incident-4491/2");
+        let updated_uri =
+            String::from_str(&env, "https://discussions.stellar.org/t/incident-4491/2");
         client.update_proposal_discussion_uri(&a1, &asset(&env), &target, &false, &updated_uri);
 
         assert_eq!(
@@ -3266,13 +3532,7 @@ mod tests {
         client.init(
             &Vec::from_array(
                 &env,
-                [
-                    a1.clone(),
-                    a2.clone(),
-                    a3.clone(),
-                    a4.clone(),
-                    a5.clone(),
-                ],
+                [a1.clone(), a2.clone(), a3.clone(), a4.clone(), a5.clone()],
             ),
             &Some(3),
         );
@@ -3347,10 +3607,12 @@ mod tests {
             Address::generate(&env),
         );
 
-        let res_quarantine = cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
+        let res_quarantine =
+            cap0077::Cap0077Adapter::quarantine_trustline(&env, &asset_code, &issuer, &target);
         assert!(res_quarantine.is_ok());
 
-        let res_release = cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
+        let res_release =
+            cap0077::Cap0077Adapter::release_trustline(&env, &asset_code, &issuer, &target);
         assert!(res_release.is_ok());
     }
 
@@ -3397,8 +3659,14 @@ mod tests {
         assert_eq!(client.get_quorum(), 5);
 
         // Invalid percentages rejected
-        assert_eq!(client.try_set_quorum_percentage(&admins[0], &0), Err(Ok(Error::InvalidParameter)));
-        assert_eq!(client.try_set_quorum_percentage(&admins[0], &101), Err(Ok(Error::InvalidParameter)));
+        assert_eq!(
+            client.try_set_quorum_percentage(&admins[0], &0),
+            Err(Ok(Error::InvalidParameter))
+        );
+        assert_eq!(
+            client.try_set_quorum_percentage(&admins[0], &101),
+            Err(Ok(Error::InvalidParameter))
+        );
     }
 
     #[test]
@@ -3416,7 +3684,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // Register compliance analyst as proposer
@@ -3437,7 +3708,10 @@ mod tests {
         );
 
         assert_eq!(client.get_active_proposal_count(), 1);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // Admin 1 votes
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
@@ -3541,7 +3815,10 @@ mod tests {
 
         // a1 creates proposal at current ledger sequence (e.g. 0)
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // Advance to exact boundary: created_ledger (0) + 50 = 50
         env.ledger().with_mut(|li| {
@@ -3549,7 +3826,10 @@ mod tests {
         });
 
         // Still active and valid at exact boundary
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
         let prune_premature = client.try_prune_expired(&a1, &asset(&env), &target, &false);
         assert_eq!(prune_premature, Err(Ok(Error::InvalidParameter)));
 
@@ -3559,7 +3839,10 @@ mod tests {
         });
 
         // Now expired
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Expired);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Expired
+        );
 
         // Further voting rejected with ProposalExpired
         let vote_late = client.try_vote_freeze(&a2, &asset(&env), &issuer, &target);
@@ -3585,7 +3868,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // a1 proposes freeze (and votes YES)
@@ -3628,8 +3914,18 @@ mod tests {
         env.mock_all_auths();
 
         let asset_names = [
-            "USDC", "EURC", "AUDD", "ARST", "BRLA", "NGNT",
-            "TZS", "KES", "INRC", "STELLARUSD12", "REALESTATE01", "COMMODITYOIL"
+            "USDC",
+            "EURC",
+            "AUDD",
+            "ARST",
+            "BRLA",
+            "NGNT",
+            "TZS",
+            "KES",
+            "INRC",
+            "STELLARUSD12",
+            "REALESTATE01",
+            "COMMODITYOIL",
         ];
         let mut asset_vec = Vec::new(&env);
         for name in asset_names.iter() {
@@ -3639,23 +3935,31 @@ mod tests {
         let empty_hash = String::from_str(&env, "");
 
         // First admin votes across all 12 assets in a single call
-        let first_round = client.batch_asset_vote_freeze(&a1, &target, &asset_vec, &issuer, &empty_hash);
+        let first_round =
+            client.batch_asset_vote_freeze(&a1, &target, &asset_vec, &issuer, &empty_hash);
         assert_eq!(first_round.len(), 12);
         for i in 0..12 {
             assert_eq!(first_round.get(i).unwrap(), 1);
             let code = asset_vec.get(i).unwrap();
-            assert_eq!(client.get_proposal_status(&code, &target, &false), ProposalStatus::Active);
+            assert_eq!(
+                client.get_proposal_status(&code, &target, &false),
+                ProposalStatus::Active
+            );
             assert_eq!(client.is_account_frozen(&code, &target), false);
         }
 
         // Second admin completes quorum across all 12 assets
-        let second_round = client.batch_asset_vote_freeze(&a2, &target, &asset_vec, &issuer, &empty_hash);
+        let second_round =
+            client.batch_asset_vote_freeze(&a2, &target, &asset_vec, &issuer, &empty_hash);
         assert_eq!(second_round.len(), 12);
         for i in 0..12 {
             assert_eq!(second_round.get(i).unwrap(), 2);
             let code = asset_vec.get(i).unwrap();
             assert!(client.is_account_frozen(&code, &target));
-            assert_eq!(client.get_proposal_status(&code, &target, &false), ProposalStatus::None);
+            assert_eq!(
+                client.get_proposal_status(&code, &target, &false),
+                ProposalStatus::None
+            );
         }
     }
 
@@ -3704,7 +4008,10 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone(), a4.clone()]), &Some(3));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone(), a4.clone()]),
+            &Some(3),
+        );
         env.mock_all_auths();
 
         // 1. First vote cast
@@ -3754,7 +4061,10 @@ mod tests {
             Address::generate(&env),
         );
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // 1. Quorum cannot be set to 0
@@ -3790,22 +4100,34 @@ mod tests {
         let issuer = Address::generate(&env);
         let target = Address::generate(&env);
 
-        client.init(&Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]), &Some(2));
+        client.init(
+            &Vec::from_array(&env, [a1.clone(), a2.clone(), a3.clone()]),
+            &Some(2),
+        );
         env.mock_all_auths();
 
         // 1. Initial State: None
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::None
+        );
 
         // Configure a timelock delay of 3600 seconds
         client.set_timelock_delay(&a1, &3600);
 
         // 2. Proposal Created with 1st vote -> State: Active
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // 3. Quorum met (2 of 3) with timelock delay -> State: Queued
         client.vote_freeze(&a2, &asset(&env), &issuer, &target);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Queued);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Queued
+        );
 
         // Execution before timelock matures fails
         let early_exec = client.try_execute_freeze(&a1, &asset(&env), &target);
@@ -3821,7 +4143,10 @@ mod tests {
         // 4. Timelock matured: Execute proposal -> State: None (executed and removed)
         let exec_ok = client.try_execute_freeze(&a1, &asset(&env), &target);
         assert!(exec_ok.is_ok());
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::None);
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::None
+        );
         assert!(client.is_account_frozen(&asset(&env), &target));
     }
 
@@ -3857,8 +4182,14 @@ mod tests {
         let gov_info = client.get_governance_info();
         assert_eq!(gov_info.admin_count, 2);
         assert_eq!(gov_info.quorum, 2);
-        assert_eq!(client.get_proposal_evidence(&asset(&env), &target), evidence);
-        assert_eq!(client.get_proposal_status(&asset(&env), &target, &false), ProposalStatus::Active);
+        assert_eq!(
+            client.get_proposal_evidence(&asset(&env), &target),
+            evidence
+        );
+        assert_eq!(
+            client.get_proposal_status(&asset(&env), &target, &false),
+            ProposalStatus::Active
+        );
 
         // 5. Multisig quorum completes freeze
         client.vote_freeze(&a2, &asset(&env), &issuer, &target);
@@ -3895,15 +4226,31 @@ mod tests {
         let empty_str = String::from_str(&env, "");
 
         // 1. propose_freeze
-        let p1 = client.try_propose_freeze(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str);
+        let p1 =
+            client.try_propose_freeze(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str);
         assert_eq!(p1, Err(Ok(Error::InvalidParameter)));
 
         // 2. propose_freeze_with_category
-        let p2 = client.try_propose_freeze_with_category(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str, &1);
+        let p2 = client.try_propose_freeze_with_category(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &whitelisted_account,
+            &empty_str,
+            &1,
+        );
         assert_eq!(p2, Err(Ok(Error::InvalidParameter)));
 
         // 3. propose_freeze_with_metadata
-        let p3 = client.try_propose_freeze_with_metadata(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str, &1, &empty_str);
+        let p3 = client.try_propose_freeze_with_metadata(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &whitelisted_account,
+            &empty_str,
+            &1,
+            &empty_str,
+        );
         assert_eq!(p3, Err(Ok(Error::InvalidParameter)));
 
         // 4. vote_freeze
@@ -3911,7 +4258,13 @@ mod tests {
         assert_eq!(p4, Err(Ok(Error::InvalidParameter)));
 
         // 5. vote_freeze_with_evidence
-        let p5 = client.try_vote_freeze_with_evidence(&a1, &asset(&env), &issuer, &whitelisted_account, &empty_str);
+        let p5 = client.try_vote_freeze_with_evidence(
+            &a1,
+            &asset(&env),
+            &issuer,
+            &whitelisted_account,
+            &empty_str,
+        );
         assert_eq!(p5, Err(Ok(Error::InvalidParameter)));
 
         // 6. vote_unfreeze

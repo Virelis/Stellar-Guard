@@ -49,3 +49,4 @@ cargo test --all
 - **Rust:** Strict zero-warning clippy check (`cargo clippy --all-targets -- -D warnings`) and `cargo fmt`.
 - **TypeScript:** Strict type checks (`tsc --noEmit`) and ESLint (`npm run lint`).
 - **Security:** Never commit private keys, secrets, or unencrypted incident data. Refer to [SECURITY.md](SECURITY.md) for vulnerability disclosure.
+
