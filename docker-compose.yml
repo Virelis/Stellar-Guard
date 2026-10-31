@@ -1,42 +1,77 @@
 services:
+  # Standalone Stellar & Soroban local quickstart container for hermetic offline testing
+  stellar-node:
+    image: stellar/quickstart:testing
+    container_name: stellar-guard-node
+    command: ["--standalone", "--enable-soroban-rpc"]
+    ports:
+      - "8000:8000"
+    environment:
+      NETWORK: "standalone"
+      ENABLE_SOROBAN_RPC: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/soroban/rpc || curl -sf http://localhost:8000/health || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - stellar-guard-net
+
   backend:
     build: ./backend
+    container_name: stellar-guard-backend
     ports:
       - "4000:4000"
     environment:
-      # Required: deploy your Soroban contract and paste the ID here
-      FREEZE_CONTRACT_ID: ${FREEZE_CONTRACT_ID:-}
-      # Stellar network endpoints (defaults to testnet)
-      HORIZON_URL: ${HORIZON_URL:-https://horizon-testnet.stellar.org}
-      SOROBAN_RPC_URL: ${SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
-      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}
-      # CORS — must match the frontend origin
+      PORT: 4000
+      NODE_ENV: ${NODE_ENV:-development}
+      FREEZE_CONTRACT_ID: ${FREEZE_CONTRACT_ID:-CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM}
+      HORIZON_URL: ${HORIZON_URL:-http://stellar-node:8000}
+      SOROBAN_RPC_URL: ${SOROBAN_RPC_URL:-http://stellar-node:8000/soroban/rpc}
+      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Standalone Network ; February 2017}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
-      # SQLite audit log path inside the container
       DB_PATH: /data/votes.db
-      # Optional: FCM server key for push notifications
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ENABLE_AML_SCORING: "true"
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 500
       FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
       FCM_TOPIC: ${FCM_TOPIC:-freeze_alerts}
     volumes:
       - backend_data:/data
+    depends_on:
+      stellar-node:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
+    networks:
+      - stellar-guard-net
 
   frontend:
     build:
       context: ./frontend
       args:
-        # Must point to the backend as seen from the browser (not the container network)
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_HORIZON_URL: ${NEXT_PUBLIC_HORIZON_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SOROBAN_RPC_URL: ${NEXT_PUBLIC_SOROBAN_RPC_URL:-http://localhost:8000/soroban/rpc}
+        NEXT_PUBLIC_STELLAR_NETWORK: "STANDALONE"
+    container_name: stellar-guard-frontend
     ports:
       - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - stellar-guard-net
+
+networks:
+  stellar-guard-net:
+    driver: bridge
 
 volumes:
   backend_data:
