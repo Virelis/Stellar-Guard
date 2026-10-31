@@ -4,7 +4,7 @@
 [![Soroban](https://img.shields.io/badge/Soroban-Smart%20Contracts-purple.svg)](https://soroban.stellar.org)
 [![CAP-0077](https://img.shields.io/badge/CAP-0077%20Quarantine-green.svg)](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0077.md)
 [![SEP Standards](https://img.shields.io/badge/SEP-0001%20%7C%200008%20%7C%200010-orange.svg)](https://stellar.org/developers)
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Production-black.svg?logo=vercel)](https://frontend-ten-steel-13.vercel.app)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Production-black.svg?logo=vercel)](https://stellar-guard.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI Matrix](https://img.shields.io/badge/CI-Passing%20(Node%20%2B%20Rust)-brightgreen.svg)](https://github.com/Virelis/Stellar-Guard/actions)
 
@@ -17,7 +17,7 @@
 
 | Component | Network / Host | Details / Links |
 | :--- | :--- | :--- |
-| **Operator Dashboard** | Vercel Production | 🚀 [https://frontend-ten-steel-13.vercel.app](https://frontend-ten-steel-13.vercel.app) |
+| **Operator Dashboard** | Vercel Production | 🚀 [https://stellar-guard.vercel.app](https://stellar-guard.vercel.app) |
 | **Soroban Smart Contract** | Stellar Testnet | [`CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4`](https://stellar.expert/explorer/testnet/contract/CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4) |
 | **WASM Bytecode Hash** | Stellar Testnet | `e2a544b76cfc3c002357f081c39a7af26a5c242bde8f06fec82f4d534be6b42f` (43.49 KB) |
 | **Contract Initialization Tx** | Stellar Testnet | [`bc20cb27a8dd0e21...`](https://stellar.expert/explorer/testnet/tx/bc20cb27a8dd0e21ea09d1da8ebeb77acace19b9b81f72397c112e9c228288b9) |

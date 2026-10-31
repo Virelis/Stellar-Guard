@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Production Deployments:**
   - **Soroban Smart Contract:** Compiled, optimized (43.49 KB), and deployed `stellar-guard-contract` to Stellar Testnet at `CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4`.
   - **Contract Initialization:** Initialized multi-sig governance with 3 admin keys (`GC5MCM...`, `GA7BAG...`, `GCQ3OL...`) and quorum threshold of 2 on Stellar Testnet (`tx: bc20cb27...`).
-  - **Frontend Deployment:** Deployed Next.js 14 operator dashboard to Vercel production at [https://frontend-ten-steel-13.vercel.app](https://frontend-ten-steel-13.vercel.app).
+  - **Frontend Deployment:** Deployed Next.js 14 operator dashboard to Vercel production at [https://stellar-guard.vercel.app](https://stellar-guard.vercel.app).
 - **Governance & Legal Documentation:**
   - Added root `LICENSE` (MIT License) with full copyright notice.
   - Added root `CODE_OF_CONDUCT.md` adopting the Contributor Covenant standards.
