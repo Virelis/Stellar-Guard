@@ -1,41 +1,61 @@
-name: Rust Contract CI
+name: Soroban Smart Contracts CI
 
 on:
   push:
-    paths: ["contracts/**", "Cargo.toml", "Cargo.lock", ".github/workflows/contract-ci.yml"]
+    paths:
+      - "contracts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/contract-ci.yml"
   pull_request:
-    paths: ["contracts/**", "Cargo.toml", "Cargo.lock", ".github/workflows/contract-ci.yml"]
+    paths:
+      - "contracts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/contract-ci.yml"
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
 
 jobs:
-  test:
-    name: Test & Lint
+  contract-suite:
+    name: Lint, Test & WASM Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust stable with wasm32 target
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
           components: clippy, rustfmt
 
-      - name: Cache cargo registry
+      - name: Cache Cargo dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-soroban-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-soroban-
 
-      - name: Check formatting
+      - name: Code format check
         run: cargo fmt --all -- --check
 
-      - name: Clippy
-        run: cargo clippy --lib -- -D warnings
+      - name: Cargo clippy check
+        run: cargo clippy --all-targets -- -D warnings
 
-      - name: Build WASM
+      - name: Run unit and integration tests
+        run: cargo test --verbose
+
+      - name: Build release WASM bytecode
         run: cargo build --release --target wasm32-unknown-unknown
+
+      - name: Verify WASM bytecode artifact existence
+        run: |
+          test -f target/wasm32-unknown-unknown/release/governance_multisig.wasm
+          ls -lh target/wasm32-unknown-unknown/release/*.wasm
