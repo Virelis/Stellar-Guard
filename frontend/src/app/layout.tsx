@@ -4,8 +4,35 @@ import { ThemeProvider } from "../context/ThemeContext";
 import { InstitutionalFooter } from "../components/InstitutionalFooter";
 
 export const metadata: Metadata = {
-  title: "Stellar-Guard | CAP-0077 Command Center",
-  description: "UI-driven interface for Quorum Freeze — quarantine compromised RWA assets",
+  title: "Stellar-Guard | Institutional Freeze Governance & Asset Protection",
+  description:
+    "Decentralized multi-signature freeze governance and CAP-0077 asset quarantine for regulated RWAs and stablecoins on Stellar.",
+  keywords: [
+    "Stellar",
+    "Soroban",
+    "CAP-0077",
+    "RWA",
+    "Regulated Assets",
+    "Multi-Sig",
+    "Asset Protection",
+    "SEP-0008",
+    "SEP-0010",
+  ],
+  authors: [{ name: "Stellar-Guard Architecture Team" }],
+  openGraph: {
+    title: "Stellar-Guard | Institutional Freeze Governance & Asset Protection",
+    description:
+      "Decentralized multi-signature freeze governance and CAP-0077 asset quarantine for regulated RWAs on Stellar.",
+    url: "https://stellar-guard.dev",
+    siteName: "Stellar-Guard",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Stellar-Guard | CAP-0077 Asset Protection on Stellar",
+    description: "Multi-sig quorum freeze governance for regulated assets on Stellar.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,9 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-white dark:bg-stellar-dark text-gray-900 dark:text-white min-h-screen flex flex-col justify-between">
         <ThemeProvider>
-          <div className="flex-1">
-            {children}
-          </div>
+          <div className="flex-1">{children}</div>
           <InstitutionalFooter />
         </ThemeProvider>
       </body>
