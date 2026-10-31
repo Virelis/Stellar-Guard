@@ -108,6 +108,8 @@ export * from "./errors";
 export * from "./stellar";
 export * from "./governance";
 export * from "./aml";
+export * from "./client";
+
 
 
 
