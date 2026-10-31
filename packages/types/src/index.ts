@@ -109,6 +109,8 @@ export * from "./stellar";
 export * from "./governance";
 export * from "./aml";
 export * from "./client";
+export * from "./events";
+
 
 
 
