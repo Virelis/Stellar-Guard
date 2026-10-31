@@ -1,0 +1,23 @@
+"area:contracts":
+  - changed-files:
+      - any-glob-to-any-file: ["contracts/**", "Cargo.toml", "Cargo.lock"]
+
+"area:backend":
+  - changed-files:
+      - any-glob-to-any-file: ["backend/**"]
+
+"area:frontend":
+  - changed-files:
+      - any-glob-to-any-file: ["frontend/**"]
+
+"area:types":
+  - changed-files:
+      - any-glob-to-any-file: ["packages/types/**"]
+
+"area:ci-cd":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "docker-compose.yml", "Makefile"]
+
+"area:documentation":
+  - changed-files:
+      - any-glob-to-any-file: ["*.md", "docs/**"]
