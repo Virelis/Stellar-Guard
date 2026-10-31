@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { resolveAlias } from "../utils/addressBook";
+import { exportAuditLogsToCsv, exportAuditLogsToJson } from "../utils/auditExport";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:4000";
 
@@ -135,6 +136,22 @@ export function AuditLogTable() {
             title="Refresh logs"
           >
             🔄
+          </button>
+
+          <button
+            onClick={() => exportAuditLogsToCsv(filteredLogs)}
+            className="p-1 border border-slate-700 bg-slate-950 rounded-lg text-xs hover:border-slate-600 px-2 text-emerald-400 font-semibold"
+            title="Export filtered records to CSV"
+          >
+            📥 CSV
+          </button>
+
+          <button
+            onClick={() => exportAuditLogsToJson(filteredLogs)}
+            className="p-1 border border-slate-700 bg-slate-950 rounded-lg text-xs hover:border-slate-600 px-2 text-indigo-400 font-semibold"
+            title="Export filtered records to JSON"
+          >
+            📥 JSON
           </button>
         </div>
       </div>
