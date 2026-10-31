@@ -6,16 +6,16 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-7B2FBE?style=for-the-badge&logo=stellar&logoColor=white)](https://stellar.expert/explorer/testnet/contract/CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)](https://stellar-guard.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)](https://stellar-guard-frontend.vercel.app)
 [![Soroban](https://img.shields.io/badge/Soroban-Rust-orange?style=for-the-badge&logo=rust&logoColor=white)](https://soroban.stellar.org)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-stellar--guard.vercel.app-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://stellar-guard.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-stellar--guard--frontend.vercel.app-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://stellar-guard-frontend.vercel.app)
 [![CAP-0077](https://img.shields.io/badge/CAP--0077-Compliant-22d3ee?style=for-the-badge)](docs/CAP_0077_QUARANTINE_SPEC.md)
 [![Build](https://img.shields.io/badge/Build-Passing-22c55e?style=for-the-badge&logo=github-actions&logoColor=white)]()
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)]()
 
 **On-chain, multi-signature asset freeze governance — built for institutional compliance on the Stellar network.**
 
-[🚀 Live Dashboard](https://stellar-guard.vercel.app) · [📖 Whitepaper](docs/WHITEPAPER.md) · [🏗️ Architecture](docs/ARCHITECTURE.md) · [🔐 Threat Model](docs/THREAT_MODEL.md) · [📋 CAP-0077 Spec](docs/CAP_0077_QUARANTINE_SPEC.md)
+[🚀 Live Dashboard](https://stellar-guard-frontend.vercel.app) · [📖 Whitepaper](docs/WHITEPAPER.md) · [🏗️ Architecture](docs/ARCHITECTURE.md) · [🔐 Threat Model](docs/THREAT_MODEL.md) · [📋 CAP-0077 Spec](docs/CAP_0077_QUARANTINE_SPEC.md)
 
 </div>
 
@@ -231,7 +231,8 @@ stellar-guard monitor --live
 | Component | Network | Address / URL |
 |---|---|---|
 | **Soroban Contract** | Stellar Testnet | [`CCM2U2RW...LFYN4`](https://stellar.expert/explorer/testnet/contract/CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4) |
-| **Operator Dashboard** | Vercel (Production) | [stellar-guard.vercel.app](https://stellar-guard.vercel.app) |
+| **Operator Dashboard** | Vercel (Production) | [stellar-guard-frontend.vercel.app](https://stellar-guard-frontend.vercel.app) |
+| **Alt URL** | Vercel (Production) | [stellar-guard-omolobamoyinoluwa-maxs-projects.vercel.app](https://stellar-guard-omolobamoyinoluwa-maxs-projects.vercel.app) |
 | **Contract WASM Hash** | — | `e2a544b76cfc3c002357f081c39a7af26a5c242bde8f06fec82f4d534be6b42f` |
 | **WASM Size** | — | 43.49 KB |
 | **Init Transaction** | Testnet | [`bc20cb27...88b9`](https://stellar.expert/explorer/testnet/tx/bc20cb27a8dd0e21ea09d1da8ebeb77acace19b9b81f72397c112e9c228288b9) |
@@ -372,6 +373,6 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 
 <div align="center">
 
-Built with ⚡ on [Stellar](https://stellar.org) · Secured by [Soroban](https://soroban.stellar.org) · Governed by [CAP-0077](docs/CAP_0077_QUARANTINE_SPEC.md)
+Built with ⚡ on [Stellar](https://stellar.org) · Secured by [Soroban](https://soroban.stellar.org) · Governed by [CAP-0077](docs/CAP_0077_QUARANTINE_SPEC.md) · [Live Dashboard](https://stellar-guard-frontend.vercel.app)
 
 </div>

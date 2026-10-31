@@ -3,7 +3,7 @@ name: Frontend CI & Vercel Deploy
 on:
   push:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/**", "vercel.json"]
   pull_request:
     paths: ["frontend/**"]
 
@@ -42,5 +42,5 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: npx vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: team_N06AYubgEDAmVhmCyrHIJ1Na
+          VERCEL_PROJECT_ID: prj_j1Dx5W4iyStlWojAKRIS7K6JiFbD
