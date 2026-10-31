@@ -1,0 +1,27 @@
+name: Soroban WASM Size Check
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+
+jobs:
+  check-size:
+    name: Verify WASM Ledger Limits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Build contract release WASM
+        run: cargo build --release --target wasm32-unknown-unknown
+
+      - name: Check WASM size against 64KB threshold
+        run: ./scripts/verify-wasm-size.sh
