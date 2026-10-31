@@ -103,3 +103,6 @@ export interface WebhookRegistration {
   active: boolean;
   createdAt: number;
 }
+
+export * from "./errors";
+
