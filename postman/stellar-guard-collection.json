@@ -1,0 +1,140 @@
+{
+  "info": {
+    "name": "Stellar-Guard Governance & Compliance API",
+    "description": "Comprehensive API collection for Stellar-Guard freeze governance, SEP-0010 WebAuth, and AML risk assessment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Diagnostics",
+      "item": [
+        {
+          "name": "Health Probe",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "Readiness Probe",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ready"
+          }
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/metrics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication (SEP-0010)",
+      "item": [
+        {
+          "name": "Get WebAuth Challenge",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sep10/challenge?account={{adminAddress}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "sep10", "challenge"],
+              "query": [{ "key": "account", "value": "{{adminAddress}}" }]
+            }
+          }
+        },
+        {
+          "name": "Verify Challenge & Issue JWT",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/sep10/verify",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": \"{{signedXdr}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Freeze Governance",
+      "item": [
+        {
+          "name": "List Active Proposals",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/freeze/proposals"
+          }
+        },
+        {
+          "name": "Submit Freeze Proposal",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/freeze/propose",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwtToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target\": \"GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVAAA\",\n  \"assetCode\": \"USDC\",\n  \"category\": \"AML_HIGH_RISK\",\n  \"incidentUri\": \"ipfs://bafybeig.../incident\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cast Admin Vote",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/freeze/vote",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwtToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proposalId\": \"{{proposalId}}\",\n  \"voteType\": \"APPROVE\",\n  \"signature\": \"{{hexSignature}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Risk & Compliance",
+      "item": [
+        {
+          "name": "Evaluate Account Risk",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/risk/evaluate?target={{targetAddress}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "risk", "evaluate"],
+              "query": [{ "key": "target", "value": "{{targetAddress}}" }]
+            }
+          }
+        },
+        {
+          "name": "Pre-flight Quarantine Simulation",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/freeze/simulate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target\": \"{{targetAddress}}\",\n  \"assetCode\": \"USDC\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "adminAddress", "value": "GBNDL7H7L5B2M77EQV6W32R3W6K47D2P25G5CVL45C4QZQ3R6T2QBAAA" },
+    { "key": "targetAddress", "value": "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVAAA" }
+  ]
+}
