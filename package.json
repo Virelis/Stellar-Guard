@@ -1,0 +1,29 @@
+{
+  "name": "stellar-guard-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CAP-0077 Quorum Freeze & RWA Asset Protection on Stellar",
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@stellar-guard/types && npm run build --workspace=stellar-guard-backend && npm run build --workspace=stellar-guard-frontend",
+    "test": "npm run test --workspace=stellar-guard-backend && npm run test --workspace=stellar-guard-frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml}\""
+  },
+  "keywords": [
+    "stellar",
+    "soroban",
+    "cap-0077",
+    "multi-sig",
+    "asset-protection",
+    "rwa",
+    "sep-0008"
+  ],
+  "author": "Stellar-Guard Team",
+  "license": "MIT"
+}
