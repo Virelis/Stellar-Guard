@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.next
+target
+coverage
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.wasm
+.vercel
+package-lock.json
