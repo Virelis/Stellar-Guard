@@ -23,10 +23,10 @@ export function RiskGauge({ score, size = 180, level }: RiskGaugeProps) {
     riskLevel === "CRITICAL"
       ? "text-rose-500"
       : riskLevel === "HIGH"
-      ? "text-orange-500"
-      : riskLevel === "MODERATE"
-      ? "text-amber-500"
-      : "text-emerald-500";
+        ? "text-orange-500"
+        : riskLevel === "MODERATE"
+          ? "text-amber-500"
+          : "text-emerald-500";
 
   return (
     <div className="flex flex-col items-center select-none" style={{ width: size }}>
@@ -42,19 +42,9 @@ export function RiskGauge({ score, size = 180, level }: RiskGaugeProps) {
             strokeLinecap="round"
           />
           {/* Moderate (30-55) */}
-          <path
-            d="M 62 37 A 80 80 0 0 1 100 20"
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth="16"
-          />
+          <path d="M 62 37 A 80 80 0 0 1 100 20" fill="none" stroke="#f59e0b" strokeWidth="16" />
           {/* High (55-80) */}
-          <path
-            d="M 108 20 A 80 80 0 0 1 146 44"
-            fill="none"
-            stroke="#f97316"
-            strokeWidth="16"
-          />
+          <path d="M 108 20 A 80 80 0 0 1 146 44" fill="none" stroke="#f97316" strokeWidth="16" />
           {/* Critical (80-100) */}
           <path
             d="M 154 52 A 80 80 0 0 1 180 100"
@@ -82,9 +72,7 @@ export function RiskGauge({ score, size = 180, level }: RiskGaugeProps) {
 
         {/* Center Digital Readout */}
         <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center">
-          <span className={`text-2xl font-black font-mono leading-none ${color}`}>
-            {clamped}
-          </span>
+          <span className={`text-2xl font-black font-mono leading-none ${color}`}>{clamped}</span>
           <span className="text-[10px] uppercase font-bold text-slate-400 mt-0.5">
             {riskLevel} RISK
           </span>
@@ -93,4 +81,3 @@ export function RiskGauge({ score, size = 180, level }: RiskGaugeProps) {
     </div>
   );
 }
-

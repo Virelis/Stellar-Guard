@@ -19,7 +19,11 @@ export function SimulationDetailsModal({
   if (!isOpen || !simulation) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full p-6 shadow-2xl relative text-slate-100 flex flex-col text-xs">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
@@ -36,7 +40,9 @@ export function SimulationDetailsModal({
         <div className="mt-4 space-y-3">
           <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
             <div>
-              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Target Account</span>
+              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">
+                Target Account
+              </span>
               <div className="flex items-center justify-between">
                 <span className="font-mono text-cyan-400 text-[11px] break-all select-all">
                   {simulation.target}
@@ -53,11 +59,17 @@ export function SimulationDetailsModal({
 
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Pre-Vote Signatures</span>
-              <span className="font-bold text-white text-sm font-mono">{simulation.currentVotes}</span>
+              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">
+                Pre-Vote Signatures
+              </span>
+              <span className="font-bold text-white text-sm font-mono">
+                {simulation.currentVotes}
+              </span>
             </div>
             <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Post-Vote Projection</span>
+              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">
+                Post-Vote Projection
+              </span>
               <span className="font-bold text-indigo-400 text-sm font-mono">
                 {simulation.postVoteCount} / {simulation.quorumThreshold}
               </span>
@@ -75,8 +87,14 @@ export function SimulationDetailsModal({
             </div>
             <div className="flex justify-between text-slate-400">
               <span>Quorum Attainment:</span>
-              <span className={simulation.willExecuteAtQuorum ? "text-rose-400 font-bold" : "text-amber-400"}>
-                {simulation.willExecuteAtQuorum ? "Quorum Attained (Execute)" : "Pending Signatures"}
+              <span
+                className={
+                  simulation.willExecuteAtQuorum ? "text-rose-400 font-bold" : "text-amber-400"
+                }
+              >
+                {simulation.willExecuteAtQuorum
+                  ? "Quorum Attained (Execute)"
+                  : "Pending Signatures"}
               </span>
             </div>
           </div>
@@ -99,4 +117,3 @@ export function SimulationDetailsModal({
     </div>
   );
 }
-

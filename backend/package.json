@@ -7,7 +7,7 @@
     "seed": "ts-node-dev src/scripts/seed.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "11.3.0",

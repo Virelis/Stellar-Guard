@@ -3,7 +3,7 @@ import { eventBus } from "../services/eventBus";
 
 export const eventsRouter = Router();
 
-eventsRouter.get("/stream", (req: Request, res: Response) => {
+eventsRouter.get(["/", "/stream"], (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");

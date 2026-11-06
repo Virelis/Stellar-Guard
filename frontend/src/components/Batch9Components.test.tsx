@@ -88,7 +88,9 @@ describe("Batch 9: Final Frontend & UI Components", () => {
         <VirtualScrollTable totalCount={200} displayedCount={50}>
           <table>
             <tbody>
-              <tr><td>Row Content</td></tr>
+              <tr>
+                <td>Row Content</td>
+              </tr>
             </tbody>
           </table>
         </VirtualScrollTable>
@@ -133,4 +135,3 @@ describe("Batch 9: Final Frontend & UI Components", () => {
     });
   });
 });
-

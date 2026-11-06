@@ -6,7 +6,11 @@ import { SimulationPreviewCard } from "./SimulationPreviewCard";
 interface EmergencyFreezeDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onExecuteFreeze: (proposal: { assetCode: string; issuer: string; target: string }) => Promise<void>;
+  onExecuteFreeze: (proposal: {
+    assetCode: string;
+    issuer: string;
+    target: string;
+  }) => Promise<void>;
   detectedHighRiskAddress?: string;
 }
 
@@ -51,7 +55,10 @@ export function EmergencyFreezeDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
 
       <div className="fixed inset-y-0 right-0 max-w-md w-full bg-slate-900 border-l border-red-500/30 p-6 shadow-2xl flex flex-col text-slate-100 animate-in slide-in-from-right duration-200">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -67,7 +74,8 @@ export function EmergencyFreezeDrawer({
         </div>
 
         <p className="text-xs text-rose-400/90 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2.5 my-4">
-          🚨 High-priority incident mode: Use this fast-path to immediately initiate quorum freeze on compromised Stellar addresses.
+          🚨 High-priority incident mode: Use this fast-path to immediately initiate quorum freeze
+          on compromised Stellar addresses.
         </p>
 
         <form onSubmit={handleFreeze} className="flex-1 space-y-4 overflow-y-auto pr-1 text-xs">
@@ -149,4 +157,3 @@ export function EmergencyFreezeDrawer({
     </div>
   );
 }
-

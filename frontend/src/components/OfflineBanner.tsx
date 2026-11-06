@@ -47,9 +47,9 @@ export function OfflineBanner() {
     <div className="bg-rose-600 text-white text-xs font-bold py-2 px-4 text-center transition-all animate-in slide-in-from-top duration-200 flex items-center justify-center gap-2 shadow-md">
       <span className="animate-bounce">⚠️</span>
       <span>
-        Network Offline: You are currently disconnected from the internet. Live Soroban streams and multi-sig voting are suspended.
+        Network Offline: You are currently disconnected from the internet. Live Soroban streams and
+        multi-sig voting are suspended.
       </span>
     </div>
   );
 }
-

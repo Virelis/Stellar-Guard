@@ -77,7 +77,9 @@ export function AnalyticsCharts() {
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-2 py-1 font-semibold rounded-md transition-all ${
-                  period === p ? "bg-slate-800 text-indigo-400" : "text-slate-500 hover:text-slate-300"
+                  period === p
+                    ? "bg-slate-800 text-indigo-400"
+                    : "text-slate-500 hover:text-slate-300"
                 }`}
               >
                 {p}
@@ -90,7 +92,10 @@ export function AnalyticsCharts() {
       <div className="mt-4 h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "volume" ? (
-            <AreaChart data={SAMPLE_VOLUME_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={SAMPLE_VOLUME_DATA}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -124,7 +129,10 @@ export function AnalyticsCharts() {
               />
             </AreaChart>
           ) : (
-            <BarChart data={SAMPLE_CATEGORY_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <BarChart
+              data={SAMPLE_CATEGORY_DATA}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} />
               <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
               <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
@@ -144,4 +152,3 @@ export function AnalyticsCharts() {
     </div>
   );
 }
-

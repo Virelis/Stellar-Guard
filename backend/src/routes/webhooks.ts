@@ -20,7 +20,8 @@ webhooksRouter.get("/", (_req: Request, res: Response) => {
 });
 
 webhooksRouter.post("/", (req: Request, res: Response) => {
-  const { url, eventFilter, secret } = req.body;
+  const { url, secret } = req.body;
+  const eventFilter = req.body.eventFilter ?? req.body.eventType ?? "*";
   if (!url || typeof url !== "string") {
     res.status(400).json({ error: "Missing required parameter 'url'" });
     return;
@@ -32,7 +33,7 @@ webhooksRouter.post("/", (req: Request, res: Response) => {
     return;
   }
 
-  const hook = registerWebhook(url, eventFilter ?? "*", secret);
+  const hook = registerWebhook(url, eventFilter, secret);
   res.status(201).json({
     success: true,
     message: "Webhook registered successfully. Secure your secret for signature verification.",

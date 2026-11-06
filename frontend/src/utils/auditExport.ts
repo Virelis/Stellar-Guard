@@ -3,7 +3,16 @@ import { AuditEntry } from "../components/AuditLogTable";
 export function exportAuditLogsToCsv(logs: AuditEntry[], filename?: string): void {
   if (typeof window === "undefined" || !logs.length) return;
 
-  const headers = ["ID", "Timestamp (ISO)", "Event Type", "Asset Code", "Issuer", "Target Account", "Admin Signer", "Details"];
+  const headers = [
+    "ID",
+    "Timestamp (ISO)",
+    "Event Type",
+    "Asset Code",
+    "Issuer",
+    "Target Account",
+    "Admin Signer",
+    "Details",
+  ];
   const rows = logs.map((log) => [
     log.id,
     new Date(log.created_at * 1000).toISOString(),
@@ -42,4 +51,3 @@ function triggerDownload(blob: Blob, filename: string): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-

@@ -32,8 +32,9 @@ export function AuditLogTable() {
   async function fetchLogs() {
     setLoading(true);
     try {
-      const { data } = await axios.get<AuditEntry[]>(`${API}/api/audit/logs`);
-      setLogs(Array.isArray(data) ? data : []);
+      const { data } = await axios.get<any>(`${API}/api/audit/logs`);
+      const items = Array.isArray(data) ? data : (data?.logs ?? []);
+      setLogs(items);
     } catch {
       // Fallback sample data if backend endpoint is unavailable during offline testing
       setLogs([
@@ -201,16 +202,14 @@ export function AuditLogTable() {
                           log.event_type.includes("EXECUTED")
                             ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                             : log.event_type.includes("VOTE")
-                            ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                              ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+                              : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                         }`}
                       >
                         {log.event_type}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-bold text-white">
-                      {log.asset_code || "—"}
-                    </td>
+                    <td className="py-2.5 px-3 font-bold text-white">{log.asset_code || "—"}</td>
                     <td className="py-2.5 px-3" title={log.target}>
                       {log.target ? (
                         <span className="text-cyan-400">{resolveAlias(log.target)}</span>
@@ -225,7 +224,10 @@ export function AuditLogTable() {
                         "—"
                       )}
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-slate-400 text-xs max-w-xs truncate" title={log.details}>
+                    <td
+                      className="py-2.5 px-3 font-sans text-slate-400 text-xs max-w-xs truncate"
+                      title={log.details}
+                    >
                       {log.details || "—"}
                     </td>
                   </tr>

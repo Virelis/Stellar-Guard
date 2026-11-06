@@ -133,5 +133,79 @@ describe("Security Remediation & Access Control Verification", () => {
       expect(res.status).toBe(200);
       expect(res.headers["content-type"]).toContain("text/csv");
     });
+
+    it("should reject unauthenticated request to /api/network/switch", async () => {
+      process.env.AUTH_REQUIRED = "true";
+      const res = await request(app).post("/api/network/switch").send({ network: "futurenet" });
+      delete process.env.AUTH_REQUIRED;
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should reject unauthenticated and non-admin request to /api/integrations/dispatch", async () => {
+      process.env.AUTH_REQUIRED = "true";
+      const unauthRes = await request(app)
+        .post("/api/integrations/dispatch")
+        .send({
+          provider: "discord",
+          webhookUrl: "https://discord.com/api/webhooks/123/abc",
+          data: {
+            assetCode: "USDC",
+            targetAddress: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+            eventType: "FREEZE",
+          },
+        });
+      delete process.env.AUTH_REQUIRED;
+      expect(unauthRes.status).toBe(401);
+
+      const auditorToken = signAuthToken(
+        "GBYAB3VLBSHUCXGZTLIHVT3VXBOIXUYJMJF7UTSIUOJCGSJDXZEWTDKH",
+        "auditor",
+        3600
+      );
+      const auditorRes = await request(app)
+        .post("/api/integrations/dispatch")
+        .set("Authorization", `Bearer ${auditorToken}`)
+        .send({
+          provider: "discord",
+          webhookUrl: "https://discord.com/api/webhooks/123/abc",
+          data: {
+            assetCode: "USDC",
+            targetAddress: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+            eventType: "FREEZE",
+          },
+        });
+      expect(auditorRes.status).toBe(403);
+    });
+
+    it("should reject SSRF attack on /api/integrations/dispatch even with admin role", async () => {
+      const adminToken = signAuthToken(
+        "GBDEVIFVWB277NYUCGDUIWI2XNXOH4AC7WGBNHFQLIN5P5WZ74UHBSVV",
+        "admin",
+        3600
+      );
+      const res = await request(app)
+        .post("/api/integrations/dispatch")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          provider: "discord",
+          webhookUrl: "http://169.254.169.254/latest/meta-data/",
+          data: {
+            assetCode: "USDC",
+            targetAddress: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+            eventType: "FREEZE",
+          },
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("Blocked internal or cloud metadata destination");
+    });
+
+    it("should serve audit logs array on /api/audit/logs with normalized fields", async () => {
+      const res = await request(app).get("/api/audit/logs");
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
   });
 });

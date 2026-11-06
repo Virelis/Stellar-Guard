@@ -57,4 +57,3 @@ export function ExportProposalsButton({
     </button>
   );
 }
-

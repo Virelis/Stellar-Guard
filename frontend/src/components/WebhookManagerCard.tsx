@@ -27,8 +27,9 @@ export function WebhookManagerCard() {
 
   async function fetchWebhooks() {
     try {
-      const { data } = await axios.get<WebhookItem[]>(`${API}/api/webhooks`);
-      setWebhooks(Array.isArray(data) ? data : []);
+      const { data } = await axios.get<any>(`${API}/api/webhooks`);
+      const items = Array.isArray(data) ? data : (data?.webhooks ?? []);
+      setWebhooks(items);
     } catch {
       // Fallback sample for offline UI testing
       setWebhooks([
@@ -160,4 +161,3 @@ export function WebhookManagerCard() {
     </div>
   );
 }
-

@@ -24,7 +24,11 @@ export function AudioAlertToggle() {
       type="button"
       onClick={toggle}
       aria-label={enabled ? "Mute audio alert sounds" : "Unmute audio alert sounds"}
-      title={enabled ? "Auditory alerts enabled (click to mute)" : "Auditory alerts muted (click to unmute)"}
+      title={
+        enabled
+          ? "Auditory alerts enabled (click to mute)"
+          : "Auditory alerts muted (click to unmute)"
+      }
       className={`p-2 rounded-lg text-xs border transition-colors shadow-sm ${
         enabled
           ? "bg-slate-800/80 border-slate-700 text-indigo-400 hover:border-slate-600"
@@ -35,4 +39,3 @@ export function AudioAlertToggle() {
     </button>
   );
 }
-

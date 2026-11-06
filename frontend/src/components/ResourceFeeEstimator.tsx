@@ -27,16 +27,12 @@ export function ResourceFeeEstimator({
           <span className="text-sm">⛽</span>
           <div>
             <span className="font-bold text-white block">Soroban Resource Meter</span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              Op: {operationType}
-            </span>
+            <span className="text-[10px] text-slate-400 font-mono">Op: {operationType}</span>
           </div>
         </div>
 
         <div className="text-right">
-          <span className="font-bold text-indigo-400 font-mono block">
-            {feeXlm} XLM
-          </span>
+          <span className="font-bold text-indigo-400 font-mono block">{feeXlm} XLM</span>
           <span className="text-[10px] text-slate-500 font-mono">
             ({simulatedFeeStroops} stroops)
           </span>
@@ -87,4 +83,3 @@ export function ResourceFeeEstimator({
     </div>
   );
 }
-

@@ -40,8 +40,15 @@ describe("Batch 7: Frontend Core & Institutional Components", () => {
 
   describe("Stellar Explorer Link Helper", () => {
     it("builds testnet and mainnet URLs accurately for accounts and transactions", () => {
-      const accUrl = buildStellarExpertUrl("account", "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN", undefined, "testnet");
-      expect(accUrl).toBe("https://stellar.expert/explorer/testnet/account/GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN");
+      const accUrl = buildStellarExpertUrl(
+        "account",
+        "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+        undefined,
+        "testnet"
+      );
+      expect(accUrl).toBe(
+        "https://stellar.expert/explorer/testnet/account/GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN"
+      );
 
       const txUrl = buildStellarExpertUrl("tx", "deadbeef1234", undefined, "public");
       expect(txUrl).toBe("https://stellar.expert/explorer/public/tx/deadbeef1234");
@@ -124,4 +131,3 @@ describe("Batch 7: Frontend Core & Institutional Components", () => {
     });
   });
 });
-

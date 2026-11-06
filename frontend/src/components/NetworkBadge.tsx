@@ -37,11 +37,16 @@ export function NetworkBadge() {
               : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
           }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${network === "TESTNET" ? "bg-amber-400" : "bg-emerald-400"} animate-pulse`} />
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${network === "TESTNET" ? "bg-amber-400" : "bg-emerald-400"} animate-pulse`}
+          />
           {label}
         </span>
         {latencyMs !== null && (
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono hidden sm:inline" title="Horizon RPC roundtrip latency">
+          <span
+            className="text-[10px] text-slate-400 dark:text-slate-500 font-mono hidden sm:inline"
+            title="Horizon RPC roundtrip latency"
+          >
             {latencyMs}ms
           </span>
         )}

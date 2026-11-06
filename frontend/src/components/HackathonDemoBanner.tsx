@@ -34,7 +34,8 @@ export function HackathonDemoBanner() {
           Stellar Drips Wave
         </span>
         <span className="text-gray-200">
-          <strong>Hackathon Live Evaluation Mode:</strong> Soroban contract is active on Testnet with dynamic quorum enforcement.
+          <strong>Hackathon Live Evaluation Mode:</strong> Soroban contract is active on Testnet
+          with dynamic quorum enforcement.
         </span>
       </div>
 
@@ -44,7 +45,11 @@ export function HackathonDemoBanner() {
           disabled={seeding}
           className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
         >
-          {seeding ? "Seeding..." : seedSuccess ? "✓ Incident Drill Ready" : "⚡ Seed Demo Scenario"}
+          {seeding
+            ? "Seeding..."
+            : seedSuccess
+              ? "✓ Incident Drill Ready"
+              : "⚡ Seed Demo Scenario"}
         </button>
         <button
           onClick={() => setDismissed(true)}
@@ -58,4 +63,3 @@ export function HackathonDemoBanner() {
     </div>
   );
 }
-

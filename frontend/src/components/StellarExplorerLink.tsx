@@ -19,7 +19,10 @@ export function buildStellarExpertUrl(
   assetIssuer?: string,
   network: string = "testnet"
 ): string {
-  const net = network.toLowerCase() === "public" || network.toLowerCase() === "mainnet" ? "public" : "testnet";
+  const net =
+    network.toLowerCase() === "public" || network.toLowerCase() === "mainnet"
+      ? "public"
+      : "testnet";
   const baseUrl = `https://stellar.expert/explorer/${net}`;
 
   switch (type) {
@@ -45,7 +48,8 @@ export function StellarExplorerLink({
   className = "",
 }: StellarExplorerLinkProps) {
   const url = buildStellarExpertUrl(type, value, assetIssuer, network);
-  const displayLabel = label || (value.length > 16 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value);
+  const displayLabel =
+    label || (value.length > 16 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value);
 
   return (
     <a
@@ -60,4 +64,3 @@ export function StellarExplorerLink({
     </a>
   );
 }
-

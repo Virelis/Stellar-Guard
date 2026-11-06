@@ -8,25 +8,29 @@ const STEPS = [
   {
     step: 1,
     title: "1. Connect Institutional Wallet",
-    description: "Connect your Freighter or Albedo wallet as an authorized multi-sig signer for the CAP-0077 contract.",
+    description:
+      "Connect your Freighter or Albedo wallet as an authorized multi-sig signer for the CAP-0077 contract.",
     icon: "🚀",
   },
   {
     step: 2,
     title: "2. Monitor Live Horizon Stream",
-    description: "Inspect continuous USDC & EURC asset flows. Real-time AML risk heuristics flag unusual transfer velocity and whale spikes.",
+    description:
+      "Inspect continuous USDC & EURC asset flows. Real-time AML risk heuristics flag unusual transfer velocity and whale spikes.",
     icon: "📡",
   },
   {
     step: 3,
     title: "3. Propose Quorum Quarantine",
-    description: "Initiate multi-sig freeze motions against compromised accounts, attaching incident reference tickets and categorization codes.",
+    description:
+      "Initiate multi-sig freeze motions against compromised accounts, attaching incident reference tickets and categorization codes.",
     icon: "🛡️",
   },
   {
     step: 4,
     title: "4. Reach Multi-Sig Consensus",
-    description: "Once 3-of-5 admin signatures are recorded on Soroban, the protocol-level freeze executes atomically on-chain.",
+    description:
+      "Once 3-of-5 admin signatures are recorded on Soroban, the protocol-level freeze executes atomically on-chain.",
     icon: "⚖️",
   },
 ];
@@ -117,4 +121,3 @@ export function OnboardingTourCard() {
     </div>
   );
 }
-

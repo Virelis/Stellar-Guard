@@ -111,15 +111,21 @@ export function SimulationPreviewCard({
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
               <span className="text-[10px] text-slate-400 block mb-0.5">Quarantine State</span>
-              <span className={`font-semibold ${simulation.isAlreadyFrozen ? "text-amber-400" : "text-emerald-400"}`}>
+              <span
+                className={`font-semibold ${simulation.isAlreadyFrozen ? "text-amber-400" : "text-emerald-400"}`}
+              >
                 {simulation.isAlreadyFrozen ? "Already Quarantined" : "Active / Unfrozen"}
               </span>
             </div>
 
             <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
               <span className="text-[10px] text-slate-400 block mb-0.5">Execution Impact</span>
-              <span className={`font-semibold ${simulation.willExecuteAtQuorum ? "text-rose-400" : "text-indigo-400"}`}>
-                {simulation.willExecuteAtQuorum ? "Immediate Freeze at Quorum" : "Signature Recorded (Pending)"}
+              <span
+                className={`font-semibold ${simulation.willExecuteAtQuorum ? "text-rose-400" : "text-indigo-400"}`}
+              >
+                {simulation.willExecuteAtQuorum
+                  ? "Immediate Freeze at Quorum"
+                  : "Signature Recorded (Pending)"}
               </span>
             </div>
           </div>
@@ -135,4 +141,3 @@ export function SimulationPreviewCard({
     </div>
   );
 }
-

@@ -42,7 +42,9 @@ export function WalletConnect({ onConnect }: Props) {
       <div className="flex items-center gap-2">
         <div className="bg-slate-100 dark:bg-stellar-card border border-indigo-500/50 rounded-lg px-3 py-1.5 text-xs font-mono text-indigo-400 flex items-center gap-2 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>{key.slice(0, 6)}…{key.slice(-4)}</span>
+          <span>
+            {key.slice(0, 6)}…{key.slice(-4)}
+          </span>
         </div>
         <button
           onClick={disconnect}
@@ -65,7 +67,9 @@ export function WalletConnect({ onConnect }: Props) {
       >
         {connecting ? "Connecting..." : "Connect Freighter"}
       </button>
-      {error && <span className="text-rose-500 dark:text-rose-400 text-xs font-medium">{error}</span>}
+      {error && (
+        <span className="text-rose-500 dark:text-rose-400 text-xs font-medium">{error}</span>
+      )}
     </div>
   );
 }

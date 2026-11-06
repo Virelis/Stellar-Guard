@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 
-export type IncidentCategory = "OFAC_SANCTIONS" | "EXPLOIT_DRAIN" | "COMPROMISED_KEY" | "COURT_ORDER" | "AML_HIGH_RISK";
+export type IncidentCategory =
+  "OFAC_SANCTIONS" | "EXPLOIT_DRAIN" | "COMPROMISED_KEY" | "COURT_ORDER" | "AML_HIGH_RISK";
 
 interface ProposalCreationModalProps {
   isOpen: boolean;
@@ -18,11 +19,31 @@ interface ProposalCreationModalProps {
 }
 
 const CATEGORIES: Array<{ id: IncidentCategory; label: string; color: string }> = [
-  { id: "EXPLOIT_DRAIN", label: "Protocol Drain / Exploit", color: "bg-red-500/10 text-red-400 border-red-500/40" },
-  { id: "COMPROMISED_KEY", label: "Compromised Private Key", color: "bg-orange-500/10 text-orange-400 border-orange-500/40" },
-  { id: "OFAC_SANCTIONS", label: "OFAC / Sanctions Match", color: "bg-purple-500/10 text-purple-400 border-purple-500/40" },
-  { id: "AML_HIGH_RISK", label: "AML Velocity Flag", color: "bg-amber-500/10 text-amber-400 border-amber-500/40" },
-  { id: "COURT_ORDER", label: "Legal / Court Order", color: "bg-blue-500/10 text-blue-400 border-blue-500/40" },
+  {
+    id: "EXPLOIT_DRAIN",
+    label: "Protocol Drain / Exploit",
+    color: "bg-red-500/10 text-red-400 border-red-500/40",
+  },
+  {
+    id: "COMPROMISED_KEY",
+    label: "Compromised Private Key",
+    color: "bg-orange-500/10 text-orange-400 border-orange-500/40",
+  },
+  {
+    id: "OFAC_SANCTIONS",
+    label: "OFAC / Sanctions Match",
+    color: "bg-purple-500/10 text-purple-400 border-purple-500/40",
+  },
+  {
+    id: "AML_HIGH_RISK",
+    label: "AML Velocity Flag",
+    color: "bg-amber-500/10 text-amber-400 border-amber-500/40",
+  },
+  {
+    id: "COURT_ORDER",
+    label: "Legal / Court Order",
+    color: "bg-blue-500/10 text-blue-400 border-blue-500/40",
+  },
 ];
 
 export function ProposalCreationModal({
@@ -79,7 +100,11 @@ export function ProposalCreationModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full p-6 shadow-2xl relative text-slate-100">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
@@ -101,9 +126,7 @@ export function ProposalCreationModal({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Asset Code
-            </label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Asset Code</label>
             <div className="grid grid-cols-3 gap-2">
               {["USDC", "EURC", "CUSTOM"].map((code) => (
                 <button
@@ -111,7 +134,8 @@ export function ProposalCreationModal({
                   type="button"
                   onClick={() => setAssetCode(code === "CUSTOM" ? "" : code)}
                   className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                    (code === "CUSTOM" && !["USDC", "EURC"].includes(assetCode)) || assetCode === code
+                    (code === "CUSTOM" && !["USDC", "EURC"].includes(assetCode)) ||
+                    assetCode === code
                       ? "bg-indigo-600 border-indigo-400 text-white"
                       : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600"
                   }`}
@@ -228,4 +252,3 @@ export function ProposalCreationModal({
     </div>
   );
 }
-

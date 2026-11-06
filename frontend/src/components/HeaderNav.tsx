@@ -45,7 +45,6 @@ export function HeaderNav({
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
 
       <div className="max-w-7xl mx-auto flex items-center justify-between py-3">
-
         {/* ── Left: Premium Brand ─────────────────────────────── */}
         <div className="flex items-center gap-3">
           {/* Logo mark — layered glow effect */}
@@ -54,7 +53,8 @@ export function HeaderNav({
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-black text-white relative z-10"
               style={{
                 background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
-                boxShadow: "0 0 16px rgba(99,102,241,0.5), 0 0 32px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.2)",
+                boxShadow:
+                  "0 0 16px rgba(99,102,241,0.5), 0 0 32px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.2)",
               }}
             >
               🛡️
@@ -102,24 +102,28 @@ export function HeaderNav({
         <div
           className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-xs cursor-default"
           style={{
-            background: isLive
-              ? "rgba(34,197,94,0.06)"
-              : "rgba(15,23,42,0.8)",
-            border: isLive
-              ? "1px solid rgba(34,197,94,0.2)"
-              : "1px solid rgba(30,45,69,0.8)",
-            boxShadow: isLive
-              ? "0 0 12px rgba(34,197,94,0.1)"
-              : "none",
+            background: isLive ? "rgba(34,197,94,0.06)" : "rgba(15,23,42,0.8)",
+            border: isLive ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(30,45,69,0.8)",
+            boxShadow: isLive ? "0 0 12px rgba(34,197,94,0.1)" : "none",
           }}
         >
           {/* Animated dot */}
           <span
             className="w-2 h-2 rounded-full flex-shrink-0"
             style={{
-              backgroundColor: isLive ? "#22c55e" : sseStatus === "connecting" ? "#f59e0b" : "#475569",
-              boxShadow: isLive ? "0 0 6px rgba(34,197,94,0.9), 0 0 12px rgba(34,197,94,0.5)" : "none",
-              animation: isLive ? "status-blink 2s ease-in-out infinite" : sseStatus === "connecting" ? "pulse 1.5s ease-in-out infinite" : "none",
+              backgroundColor: isLive
+                ? "#22c55e"
+                : sseStatus === "connecting"
+                  ? "#f59e0b"
+                  : "#475569",
+              boxShadow: isLive
+                ? "0 0 6px rgba(34,197,94,0.9), 0 0 12px rgba(34,197,94,0.5)"
+                : "none",
+              animation: isLive
+                ? "status-blink 2s ease-in-out infinite"
+                : sseStatus === "connecting"
+                  ? "pulse 1.5s ease-in-out infinite"
+                  : "none",
             }}
           />
           <span
@@ -173,11 +177,13 @@ export function HeaderNav({
               boxShadow: "0 0 12px rgba(99,102,241,0.25)",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 20px rgba(99,102,241,0.5), 0 4px 15px rgba(99,102,241,0.3)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 0 20px rgba(99,102,241,0.5), 0 4px 15px rgba(99,102,241,0.3)";
               (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 12px rgba(99,102,241,0.25)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 0 12px rgba(99,102,241,0.25)";
               (e.currentTarget as HTMLButtonElement).style.transform = "";
             }}
           >
@@ -197,13 +203,17 @@ export function HeaderNav({
               boxShadow: "0 0 12px rgba(239,68,68,0.2)",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, #e11d48, #f87171)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 20px rgba(239,68,68,0.5), 0 4px 15px rgba(239,68,68,0.3)";
+              (e.currentTarget as HTMLButtonElement).style.background =
+                "linear-gradient(135deg, #e11d48, #f87171)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 0 20px rgba(239,68,68,0.5), 0 4px 15px rgba(239,68,68,0.3)";
               (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, #be123c, #ef4444)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 12px rgba(239,68,68,0.2)";
+              (e.currentTarget as HTMLButtonElement).style.background =
+                "linear-gradient(135deg, #be123c, #ef4444)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 0 12px rgba(239,68,68,0.2)";
               (e.currentTarget as HTMLButtonElement).style.transform = "";
             }}
             title="Open Emergency Fast Freeze"
@@ -255,7 +265,10 @@ export function HeaderNav({
 
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => { onOpenProposalModal(); setMobileMenuOpen(false); }}
+              onClick={() => {
+                onOpenProposalModal();
+                setMobileMenuOpen(false);
+              }}
               className="w-full py-2 text-white rounded-lg text-xs font-semibold"
               style={{
                 background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
@@ -265,7 +278,10 @@ export function HeaderNav({
               ✦ New Proposal
             </button>
             <button
-              onClick={() => { onOpenEmergencyDrawer(); setMobileMenuOpen(false); }}
+              onClick={() => {
+                onOpenEmergencyDrawer();
+                setMobileMenuOpen(false);
+              }}
               className="w-full py-2 text-white rounded-lg text-xs font-semibold"
               style={{
                 background: "linear-gradient(135deg, #be123c, #ef4444)",
@@ -277,7 +293,10 @@ export function HeaderNav({
           </div>
 
           <button
-            onClick={() => { onOpenAddressBook(); setMobileMenuOpen(false); }}
+            onClick={() => {
+              onOpenAddressBook();
+              setMobileMenuOpen(false);
+            }}
             className="w-full py-2 text-slate-200 rounded-lg text-xs font-semibold"
             style={{
               background: "rgba(15,23,42,0.8)",
@@ -287,7 +306,10 @@ export function HeaderNav({
             📖 Address Book
           </button>
 
-          <div className="pt-2 border-t flex justify-end" style={{ borderColor: "rgba(30,45,69,0.9)" }}>
+          <div
+            className="pt-2 border-t flex justify-end"
+            style={{ borderColor: "rgba(30,45,69,0.9)" }}
+          >
             <WalletConnect onConnect={onConnectWallet} />
           </div>
         </div>

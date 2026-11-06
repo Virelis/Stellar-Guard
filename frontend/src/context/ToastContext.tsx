@@ -41,16 +41,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }
 
   const success = (title: string, message?: string, actionUrl?: string) =>
-    showToast({ type: "success", title, message, actionUrl, actionLabel: actionUrl ? "View ↗" : undefined });
+    showToast({
+      type: "success",
+      title,
+      message,
+      actionUrl,
+      actionLabel: actionUrl ? "View ↗" : undefined,
+    });
 
-  const error = (title: string, message?: string) =>
-    showToast({ type: "error", title, message });
+  const error = (title: string, message?: string) => showToast({ type: "error", title, message });
 
   const warning = (title: string, message?: string) =>
     showToast({ type: "warning", title, message });
 
-  const info = (title: string, message?: string) =>
-    showToast({ type: "info", title, message });
+  const info = (title: string, message?: string) => showToast({ type: "info", title, message });
 
   return (
     <ToastContext.Provider value={{ showToast, success, error, warning, info }}>
@@ -61,10 +65,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             t.type === "success"
               ? "border-emerald-500/40 bg-slate-900/95 text-emerald-400"
               : t.type === "error"
-              ? "border-rose-500/40 bg-slate-900/95 text-rose-400"
-              : t.type === "warning"
-              ? "border-amber-500/40 bg-slate-900/95 text-amber-400"
-              : "border-indigo-500/40 bg-slate-900/95 text-indigo-400";
+                ? "border-rose-500/40 bg-slate-900/95 text-rose-400"
+                : t.type === "warning"
+                  ? "border-amber-500/40 bg-slate-900/95 text-amber-400"
+                  : "border-indigo-500/40 bg-slate-900/95 text-indigo-400";
 
           return (
             <div
@@ -113,4 +117,3 @@ export function useToast(): ToastContextType {
   }
   return ctx;
 }
-

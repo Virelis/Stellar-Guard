@@ -59,7 +59,11 @@ export function AddressBookModal({ isOpen, onClose, onSelectAddress }: AddressBo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-xl w-full p-6 shadow-2xl relative text-slate-100 max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
@@ -70,7 +74,10 @@ export function AddressBookModal({ isOpen, onClose, onSelectAddress }: AddressBo
               Manage trusted governance keys and institutional aliases
             </p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white rounded-lg p-1.5 transition-colors">
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white rounded-lg p-1.5 transition-colors"
+          >
             ✕
           </button>
         </div>
@@ -122,7 +129,9 @@ export function AddressBookModal({ isOpen, onClose, onSelectAddress }: AddressBo
 
         {/* Add Contact Form */}
         <form onSubmit={handleAdd} className="mt-4 pt-4 border-t border-slate-800 space-y-3">
-          <span className="text-xs font-semibold text-slate-300 block">Add Trusted Admin / Alias</span>
+          <span className="text-xs font-semibold text-slate-300 block">
+            Add Trusted Admin / Alias
+          </span>
           <div className="grid grid-cols-2 gap-2">
             <input
               type="text"
@@ -168,4 +177,3 @@ export function AddressBookModal({ isOpen, onClose, onSelectAddress }: AddressBo
     </div>
   );
 }
-

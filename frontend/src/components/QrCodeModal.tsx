@@ -33,7 +33,11 @@ export function QrCodeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-sm w-full p-6 shadow-2xl relative text-slate-100 flex flex-col items-center text-center">
         <button
           onClick={onClose}
@@ -48,13 +52,7 @@ export function QrCodeModal({
 
         <div className="mt-4 p-3 bg-white rounded-xl shadow-inner border border-slate-300">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrUrl}
-            alt="Stellar QR Code"
-            width={240}
-            height={240}
-            className="rounded"
-          />
+          <img src={qrUrl} alt="Stellar QR Code" width={240} height={240} className="rounded" />
         </div>
 
         <div className="mt-4 w-full bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-300 break-all select-all max-h-20 overflow-y-auto">
@@ -79,4 +77,3 @@ export function QrCodeModal({
     </div>
   );
 }
-

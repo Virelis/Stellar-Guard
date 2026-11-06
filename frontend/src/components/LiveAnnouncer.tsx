@@ -19,12 +19,7 @@ export function LiveAnnouncerProvider({ children }: { children: ReactNode }) {
   return (
     <AnnouncerContext.Provider value={{ announce }}>
       {children}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-        data-testid="live-announcer"
-      >
+      <div aria-live="polite" aria-atomic="true" className="sr-only" data-testid="live-announcer">
         {announcement}
       </div>
     </AnnouncerContext.Provider>
@@ -40,4 +35,3 @@ export function useAnnouncer(): AnnouncerContextType {
   }
   return ctx;
 }
-

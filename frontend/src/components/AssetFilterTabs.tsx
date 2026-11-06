@@ -39,9 +39,7 @@ export function AssetFilterTabs({
             <span>{t.label}</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                isActive
-                  ? "bg-white/20 text-white"
-                  : "bg-slate-800 text-slate-400"
+                isActive ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
               }`}
             >
               {count}
@@ -52,4 +50,3 @@ export function AssetFilterTabs({
     </div>
   );
 }
-

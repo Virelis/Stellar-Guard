@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { isConnected, getPublicKey, getNetwork } from "@stellar/freighter-api";
 
-export type WalletStatus = "disconnected" | "connecting" | "connected" | "network_mismatch" | "error";
+export type WalletStatus =
+  "disconnected" | "connecting" | "connected" | "network_mismatch" | "error";
 
 interface WalletContextType {
   status: WalletStatus;
@@ -99,4 +100,3 @@ export function useWallet(): WalletContextType {
   }
   return ctx;
 }
-

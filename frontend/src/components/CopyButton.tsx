@@ -39,11 +39,8 @@ export function CopyButton({ text, label, compact = false, className = "" }: Cop
           ✓ {!compact && (label ? "Copied!" : "")}
         </span>
       ) : (
-        <span className="text-xs">
-          📋 {!compact && label}
-        </span>
+        <span className="text-xs">📋 {!compact && label}</span>
       )}
     </button>
   );
 }
-

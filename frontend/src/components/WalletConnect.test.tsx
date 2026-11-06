@@ -11,15 +11,19 @@ beforeEach(() => jest.clearAllMocks());
 
 test("connects successfully and calls onConnect with public key", async () => {
   mockIsConnected.mockResolvedValue(true);
-  mockGetPublicKey.mockResolvedValue("GABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890");
+  mockGetPublicKey.mockResolvedValue(
+    "GABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890"
+  );
 
   const onConnect = jest.fn();
   render(<WalletConnect onConnect={onConnect} />);
   fireEvent.click(screen.getByText("Connect Freighter"));
 
-  await waitFor(() => expect(onConnect).toHaveBeenCalledWith(
-    "GABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890"
-  ));
+  await waitFor(() =>
+    expect(onConnect).toHaveBeenCalledWith(
+      "GABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890"
+    )
+  );
 });
 
 test("shows error when Freighter is not installed", async () => {
@@ -28,9 +32,7 @@ test("shows error when Freighter is not installed", async () => {
   render(<WalletConnect onConnect={jest.fn()} />);
   fireEvent.click(screen.getByText("Connect Freighter"));
 
-  await waitFor(() =>
-    expect(screen.getByText("Freighter not installed")).toBeInTheDocument()
-  );
+  await waitFor(() => expect(screen.getByText("Freighter not installed")).toBeInTheDocument());
 });
 
 test("shows error message on connection failure", async () => {
@@ -40,7 +42,5 @@ test("shows error message on connection failure", async () => {
   render(<WalletConnect onConnect={jest.fn()} />);
   fireEvent.click(screen.getByText("Connect Freighter"));
 
-  await waitFor(() =>
-    expect(screen.getByText("User rejected")).toBeInTheDocument()
-  );
+  await waitFor(() => expect(screen.getByText("User rejected")).toBeInTheDocument());
 });

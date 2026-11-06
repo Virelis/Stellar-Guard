@@ -51,7 +51,11 @@ export function XdrInspectorModal({
   )}&type=TransactionEnvelope&network=test`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
@@ -84,9 +88,7 @@ export function XdrInspectorModal({
           <button
             onClick={() => setActiveTab("raw")}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              activeTab === "raw"
-                ? "bg-indigo-600 text-white"
-                : "text-slate-400 hover:text-white"
+              activeTab === "raw" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
             }`}
           >
             Raw Base64 XDR
@@ -102,18 +104,26 @@ export function XdrInspectorModal({
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <span className="text-[10px] text-slate-500 uppercase block mb-1">Source Account</span>
-                  <span className="font-mono text-indigo-400 break-all select-all">{parsed.source}</span>
+                  <span className="text-[10px] text-slate-500 uppercase block mb-1">
+                    Source Account
+                  </span>
+                  <span className="font-mono text-indigo-400 break-all select-all">
+                    {parsed.source}
+                  </span>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <span className="text-[10px] text-slate-500 uppercase block mb-1">Fee (Stroops)</span>
+                  <span className="text-[10px] text-slate-500 uppercase block mb-1">
+                    Fee (Stroops)
+                  </span>
                   <span className="font-mono text-white">{parsed.fee} stroops</span>
                 </div>
               </div>
 
               {parsed.sequence && (
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <span className="text-[10px] text-slate-500 uppercase block mb-1">Sequence Number</span>
+                  <span className="text-[10px] text-slate-500 uppercase block mb-1">
+                    Sequence Number
+                  </span>
                   <span className="font-mono text-white">{parsed.sequence}</span>
                 </div>
               )}
@@ -124,7 +134,10 @@ export function XdrInspectorModal({
                 </span>
                 <div className="space-y-2">
                   {parsed.operations.map((op: any, i: number) => (
-                    <div key={i} className="bg-slate-900 p-2.5 rounded border border-slate-700/60 font-mono text-[11px]">
+                    <div
+                      key={i}
+                      className="bg-slate-900 p-2.5 rounded border border-slate-700/60 font-mono text-[11px]"
+                    >
                       <span className="text-emerald-400 font-bold block mb-1">
                         #{i + 1} {op.type}
                       </span>
@@ -179,4 +192,3 @@ export function XdrInspectorModal({
     </div>
   );
 }
-

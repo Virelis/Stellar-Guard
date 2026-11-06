@@ -86,10 +86,16 @@ export function AccountRiskBadge({
       >
         <span
           className={`w-1.5 h-1.5 rounded-full ${
-            level === "CRITICAL" ? "bg-rose-400 animate-ping" : level === "HIGH" ? "bg-orange-400" : "bg-emerald-400"
+            level === "CRITICAL"
+              ? "bg-rose-400 animate-ping"
+              : level === "HIGH"
+                ? "bg-orange-400"
+                : "bg-emerald-400"
           }`}
         />
-        <span>Risk: {assessment ? assessment.riskScore : "..."} ({level})</span>
+        <span>
+          Risk: {assessment ? assessment.riskScore : "..."} ({level})
+        </span>
       </button>
 
       {popoverOpen && assessment && (
@@ -98,7 +104,9 @@ export function AccountRiskBadge({
           <div className="absolute left-0 mt-1.5 w-64 p-3 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 text-xs text-slate-200 animate-in fade-in zoom-in-95 duration-100">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <span className="font-bold text-white">AML Compliance Score</span>
-              <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${styles.bg} ${styles.text}`}>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${styles.bg} ${styles.text}`}
+              >
                 {assessment.riskScore} / 100
               </span>
             </div>
@@ -110,9 +118,14 @@ export function AccountRiskBadge({
                 </p>
               ) : (
                 assessment.factors.map((f, i) => (
-                  <div key={i} className="bg-slate-950 p-1.5 rounded border border-slate-800 text-[10px]">
+                  <div
+                    key={i}
+                    className="bg-slate-950 p-1.5 rounded border border-slate-800 text-[10px]"
+                  >
                     <span className="font-bold text-amber-400 block">{f.code}</span>
-                    <span className="text-slate-400">{f.description} (+{f.weight} pts)</span>
+                    <span className="text-slate-400">
+                      {f.description} (+{f.weight} pts)
+                    </span>
                   </div>
                 ))
               )}
@@ -136,4 +149,3 @@ export function AccountRiskBadge({
     </div>
   );
 }
-

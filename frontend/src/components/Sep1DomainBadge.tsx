@@ -7,7 +7,10 @@ interface Sep1DomainBadgeProps {
   verified?: boolean;
 }
 
-export function Sep1DomainBadge({ domain = "stellar-guard.org", verified = true }: Sep1DomainBadgeProps) {
+export function Sep1DomainBadge({
+  domain = "stellar-guard.org",
+  verified = true,
+}: Sep1DomainBadgeProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,7 +33,10 @@ export function Sep1DomainBadge({ domain = "stellar-guard.org", verified = true 
               <span className="font-bold text-white flex items-center gap-1.5">
                 🌐 SEP-0001 Identity Manifest
               </span>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white text-xs">
+              <button
+                onClick={() => setOpen(false)}
+                className="text-slate-400 hover:text-white text-xs"
+              >
                 ✕
               </button>
             </div>
@@ -69,4 +75,3 @@ export function Sep1DomainBadge({ domain = "stellar-guard.org", verified = true 
     </div>
   );
 }
-

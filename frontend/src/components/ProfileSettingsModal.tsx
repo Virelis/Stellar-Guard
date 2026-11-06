@@ -34,7 +34,11 @@ export function ProfileSettingsModal({
   const alias = activePublicKey ? resolveAlias(activePublicKey) : "Anonymous Observer";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 flex flex-col text-xs">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
@@ -108,7 +112,9 @@ export function ProfileSettingsModal({
             >
               Disconnect Wallet
             </button>
-          ) : <div />}
+          ) : (
+            <div />
+          )}
 
           <button
             onClick={onClose}
@@ -121,4 +127,3 @@ export function ProfileSettingsModal({
     </div>
   );
 }
-

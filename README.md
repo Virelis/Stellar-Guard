@@ -10,8 +10,8 @@
 [![Soroban](https://img.shields.io/badge/Soroban-Rust-orange?style=for-the-badge&logo=rust&logoColor=white)](https://soroban.stellar.org)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-stellar--guard--frontend.vercel.app-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://stellar-guard-frontend.vercel.app)
 [![CAP-0077](https://img.shields.io/badge/CAP--0077-Compliant-22d3ee?style=for-the-badge)](docs/CAP_0077_QUARANTINE_SPEC.md)
-[![Build](https://img.shields.io/badge/Build-Passing-22c55e?style=for-the-badge&logo=github-actions&logoColor=white)]()
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)]()
+[![Build](https://img.shields.io/badge/Build-Passing-22c55e?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/Virelis/Stellar-Guard/actions)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](<>)
 
 **On-chain, multi-signature asset freeze governance — built for institutional compliance on the Stellar network.**
 
@@ -81,20 +81,20 @@ The result is a system that is either too slow (compliance teams waiting on sing
 
 ## ✨ Features
 
-| Feature | Description |
-|---|---|
-| 🔐 **CAP-0077 Quarantine** | Propose, vote, and execute quorum-based asset freezes entirely on-chain |
-| 🗳️ **Dynamic Quorum (≥66%)** | Configurable multi-sig threshold — no single point of freeze authority |
-| ⏱️ **Timelocked Execution** | Mandatory delay between quorum and execution, preventing rushed freezes |
-| 🔏 **RBAC** | Role-based access control with operator, signer, auditor, and admin tiers |
-| 🧾 **IPFS Evidence** | Every proposal cryptographically binds IPFS-hosted forensic evidence docs |
-| 🤖 **AML Risk Scoring** | Automated risk engine flags addresses before proposals are submitted |
-| 📊 **Full Audit Trail** | Immutable, exportable audit log with PDF export for regulators |
-| 🛡️ **SEP-0010 WebAuth** | Stellar standard authentication — no passwords stored |
-| 📜 **SEP-0008 Regulated Assets** | Full regulated asset lifecycle compliance |
-| 💼 **Freighter Wallet** | Native browser wallet integration for signing governance transactions |
-| 📡 **Live Monitoring** | Real-time SSE feed, Prometheus metrics endpoint, Winston structured logs |
-| 📱 **Mobile-Ready** | Responsive operator dashboard works on any device |
+| Feature                          | Description                                                               |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| 🔐 **CAP-0077 Quarantine**       | Propose, vote, and execute quorum-based asset freezes entirely on-chain   |
+| 🗳️ **Dynamic Quorum (≥66%)**     | Configurable multi-sig threshold — no single point of freeze authority    |
+| ⏱️ **Timelocked Execution**      | Mandatory delay between quorum and execution, preventing rushed freezes   |
+| 🔏 **RBAC**                      | Role-based access control with operator, signer, auditor, and admin tiers |
+| 🧾 **IPFS Evidence**             | Every proposal cryptographically binds IPFS-hosted forensic evidence docs |
+| 🤖 **AML Risk Scoring**          | Automated risk engine flags addresses before proposals are submitted      |
+| 📊 **Full Audit Trail**          | Immutable, exportable audit log with PDF export for regulators            |
+| 🛡️ **SEP-0010 WebAuth**          | Stellar standard authentication — no passwords stored                     |
+| 📜 **SEP-0008 Regulated Assets** | Full regulated asset lifecycle compliance                                 |
+| 💼 **Freighter Wallet**          | Native browser wallet integration for signing governance transactions     |
+| 📡 **Live Monitoring**           | Real-time SSE feed, Prometheus metrics endpoint, Winston structured logs  |
+| 📱 **Mobile-Ready**              | Responsive operator dashboard works on any device                         |
 
 ---
 
@@ -103,9 +103,11 @@ The result is a system that is either too slow (compliance teams waiting on sing
 <div align="center">
 
 ### Operator Dashboard
+
 ![Stellar-Guard Dashboard](docs/screenshots/dashboard.svg)
 
 ### Mobile View
+
 ![Stellar-Guard Mobile](docs/screenshots/mobile_view.svg)
 
 </div>
@@ -118,12 +120,12 @@ The result is a system that is either too slow (compliance teams waiting on sing
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/stellar-guard.git
-cd stellar-guard
+git clone https://github.com/Virelis/Stellar-Guard.git
+cd Stellar-Guard
 
 # Copy environment template
-cp .env.example .env
-# Edit .env with your Stellar keypair and IPFS credentials
+cp backend/.env.example backend/.env
+# Edit backend/.env with your Stellar keypair and configuration
 
 # Start everything (dashboard + backend + SQLite)
 docker compose up -d
@@ -145,26 +147,28 @@ docker compose up -d
 #### 1. Install dependencies
 
 ```bash
-# Backend
-cd backend && npm install
+# Install workspace dependencies from root
+npm install
 
-# Dashboard
-cd ../dashboard && npm install
+# Or per package:
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
 #### 2. Configure environment
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 ```
 
-| Variable | Description |
-|---|---|
-| `STELLAR_NETWORK` | `testnet` or `mainnet` |
-| `CONTRACT_ID` | `CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4` |
-| `ADMIN_SECRET_KEY` | Your Stellar admin secret key |
-| `IPFS_API_URL` | IPFS node API endpoint |
-| `JWT_SECRET` | Secret for JWT session tokens |
+| Variable             | Description                                                |
+| -------------------- | ---------------------------------------------------------- |
+| `STELLAR_NETWORK`    | `testnet` or `mainnet`                                     |
+| `FREEZE_CONTRACT_ID` | `CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4` |
+| `SERVER_SIGNING_KEY` | Your Stellar server signing secret key (for SEP-0010)      |
+| `JWT_SECRET`         | Secret for JWT session tokens (≥ 32 chars)                 |
+| `ADMIN_WALLETS`      | Comma-separated Stellar public keys with admin privileges  |
 
 #### 3. Start the backend
 
@@ -177,7 +181,7 @@ npm run dev
 #### 4. Start the dashboard
 
 ```bash
-cd dashboard
+cd frontend
 npm run dev
 # Dashboard running at http://localhost:3000
 ```
@@ -228,31 +232,31 @@ stellar-guard monitor --live
 
 ## 🌐 Live Deployment
 
-| Component | Network | Address / URL |
-|---|---|---|
-| **Soroban Contract** | Stellar Testnet | [`CCM2U2RW...LFYN4`](https://stellar.expert/explorer/testnet/contract/CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4) |
-| **Operator Dashboard** | Vercel (Production) | [stellar-guard-frontend.vercel.app](https://stellar-guard-frontend.vercel.app) |
-| **Alt URL** | Vercel (Production) | [stellar-guard-omolobamoyinoluwa-maxs-projects.vercel.app](https://stellar-guard-omolobamoyinoluwa-maxs-projects.vercel.app) |
-| **Contract WASM Hash** | — | `e2a544b76cfc3c002357f081c39a7af26a5c242bde8f06fec82f4d534be6b42f` |
-| **WASM Size** | — | 43.49 KB |
-| **Init Transaction** | Testnet | [`bc20cb27...88b9`](https://stellar.expert/explorer/testnet/tx/bc20cb27a8dd0e21ea09d1da8ebeb77acace19b9b81f72397c112e9c228288b9) |
+| Component              | Network             | Address / URL                                                                                                                    |
+| ---------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Soroban Contract**   | Stellar Testnet     | [`CCM2U2RW...LFYN4`](https://stellar.expert/explorer/testnet/contract/CCM2U2RWZVKISBKOAUBCTSYA63GIYAVC4RRBZU4Q5KKY5ZOYN45LFYN4)  |
+| **Operator Dashboard** | Vercel (Production) | [stellar-guard-frontend.vercel.app](https://stellar-guard-frontend.vercel.app)                                                   |
+| **Alt URL**            | Vercel (Production) | [stellar-guard-omolobamoyinoluwa-maxs-projects.vercel.app](https://stellar-guard-omolobamoyinoluwa-maxs-projects.vercel.app)     |
+| **Contract WASM Hash** | —                   | `e2a544b76cfc3c002357f081c39a7af26a5c242bde8f06fec82f4d534be6b42f`                                                               |
+| **WASM Size**          | —                   | 43.49 KB                                                                                                                         |
+| **Init Transaction**   | Testnet             | [`bc20cb27...88b9`](https://stellar.expert/explorer/testnet/tx/bc20cb27a8dd0e21ea09d1da8ebeb77acace19b9b81f72397c112e9c228288b9) |
 
 ---
 
 ## 🔧 Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Smart Contract** | Soroban (Rust), Stellar Testnet |
-| **Frontend** | Next.js 14, TypeScript, Tailwind CSS, Glassmorphism UI |
-| **Backend** | Express.js, Node.js, SQLite, Winston, Prometheus |
-| **Authentication** | SEP-0010 WebAuth, JWT, Freighter Wallet |
-| **Asset Standard** | SEP-0008 Regulated Assets |
-| **Governance Protocol** | CAP-0077 Quarantine |
-| **Evidence Storage** | IPFS |
-| **Deployment** | Vercel (dashboard), Docker Compose (self-hosted) |
-| **CLI** | `@stellar-guard/cli` (npm) |
-| **Monitoring** | Prometheus metrics, Winston structured logs, SSE live feed |
+| Layer                   | Technology                                                 |
+| ----------------------- | ---------------------------------------------------------- |
+| **Smart Contract**      | Soroban (Rust), Stellar Testnet                            |
+| **Frontend**            | Next.js 14, TypeScript, Tailwind CSS, Glassmorphism UI     |
+| **Backend**             | Express.js, Node.js, SQLite, Winston, Prometheus           |
+| **Authentication**      | SEP-0010 WebAuth, JWT, Freighter Wallet                    |
+| **Asset Standard**      | SEP-0008 Regulated Assets                                  |
+| **Governance Protocol** | CAP-0077 Quarantine                                        |
+| **Evidence Storage**    | IPFS                                                       |
+| **Deployment**          | Vercel (dashboard), Docker Compose (self-hosted)           |
+| **CLI**                 | `@stellar-guard/cli` (npm)                                 |
+| **Monitoring**          | Prometheus metrics, Winston structured logs, SSE live feed |
 
 ---
 
@@ -345,23 +349,23 @@ cd contract && cargo build --target wasm32-unknown-unknown --release
 
 ### Branch Strategy
 
-| Branch | Purpose |
-|---|---|
-| `main` | Production-ready code |
+| Branch    | Purpose                         |
+| --------- | ------------------------------- |
+| `main`    | Production-ready code           |
 | `develop` | Integration branch for features |
-| `feat/*` | Feature branches |
-| `fix/*` | Bug fix branches |
+| `feat/*`  | Feature branches                |
+| `fix/*`   | Bug fix branches                |
 
 ---
 
 ## 📖 Documentation
 
-| Document | Description |
-|---|---|
-| [WHITEPAPER.md](docs/WHITEPAPER.md) | Full protocol design rationale and economic model |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Detailed system architecture and component diagrams |
-| [THREAT_MODEL.md](docs/THREAT_MODEL.md) | Security threat analysis, attack vectors, and mitigations |
-| [CAP_0077_QUARANTINE_SPEC.md](docs/CAP_0077_QUARANTINE_SPEC.md) | CAP-0077 implementation specification |
+| Document                                                        | Description                                               |
+| --------------------------------------------------------------- | --------------------------------------------------------- |
+| [WHITEPAPER.md](docs/WHITEPAPER.md)                             | Full protocol design rationale and economic model         |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md)                         | Detailed system architecture and component diagrams       |
+| [THREAT_MODEL.md](docs/THREAT_MODEL.md)                         | Security threat analysis, attack vectors, and mitigations |
+| [CAP_0077_QUARANTINE_SPEC.md](docs/CAP_0077_QUARANTINE_SPEC.md) | CAP-0077 implementation specification                     |
 
 ---
 

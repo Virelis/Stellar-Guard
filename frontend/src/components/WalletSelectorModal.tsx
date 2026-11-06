@@ -51,15 +51,15 @@ interface WalletSelectorModalProps {
   onSelectWallet: (wallet: WalletType) => void;
 }
 
-export function WalletSelectorModal({
-  isOpen,
-  onClose,
-  onSelectWallet,
-}: WalletSelectorModalProps) {
+export function WalletSelectorModal({ isOpen, onClose, onSelectWallet }: WalletSelectorModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl relative text-slate-100">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
@@ -70,7 +70,10 @@ export function WalletSelectorModal({
               Select your preferred Stellar signature provider
             </p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg text-xs">
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white p-1 rounded-lg text-xs"
+          >
             ✕
           </button>
         </div>
@@ -92,11 +95,13 @@ export function WalletSelectorModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white text-xs">{opt.name}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                      opt.isPopular
-                        ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                        : "bg-slate-800 text-slate-400 border border-slate-700"
-                    }`}>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                        opt.isPopular
+                          ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+                          : "bg-slate-800 text-slate-400 border border-slate-700"
+                      }`}
+                    >
                       {opt.badge}
                     </span>
                   </div>
@@ -119,4 +124,3 @@ export function WalletSelectorModal({
     </div>
   );
 }
-

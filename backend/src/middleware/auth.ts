@@ -30,8 +30,9 @@ if (
   );
 }
 
-const isProduction = process.env.NODE_ENV === "production";
-const isAuthEnforced = isProduction || process.env.AUTH_REQUIRED === "true";
+export function isAuthEnforced(): boolean {
+  return process.env.NODE_ENV === "production" || process.env.AUTH_REQUIRED === "true";
+}
 
 function base64UrlEncode(str: string): string {
   return Buffer.from(str)
@@ -109,7 +110,7 @@ export function verifyAuthToken(token: string): AuthPayload | null {
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    if (isAuthEnforced) {
+    if (isAuthEnforced()) {
       res
         .status(401)
         .json({ error: "Unauthorized", message: "Missing or invalid Authorization header" });
@@ -132,7 +133,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
 export function requireRole(...allowedRoles: Role[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (!isAuthEnforced && !req.auth) {
+    if (!isAuthEnforced() && !req.auth) {
       return next();
     }
     if (!req.auth || !allowedRoles.includes(req.auth.role)) {

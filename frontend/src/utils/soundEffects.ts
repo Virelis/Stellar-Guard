@@ -60,4 +60,3 @@ export function playAlertSound(type: AlertSoundType = "notification"): void {
     // AudioContext blocked by browser autoplay policy
   }
 }
-

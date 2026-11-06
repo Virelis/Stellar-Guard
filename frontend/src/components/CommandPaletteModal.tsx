@@ -21,9 +21,10 @@ export function CommandPaletteModal({ isOpen, onClose, actions }: CommandPalette
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const filtered = actions.filter((a) =>
-    a.title.toLowerCase().includes(query.toLowerCase()) ||
-    a.category.toLowerCase().includes(query.toLowerCase())
+  const filtered = actions.filter(
+    (a) =>
+      a.title.toLowerCase().includes(query.toLowerCase()) ||
+      a.category.toLowerCase().includes(query.toLowerCase())
   );
 
   useEffect(() => {
@@ -58,7 +59,11 @@ export function CommandPaletteModal({ isOpen, onClose, actions }: CommandPalette
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full p-4 shadow-2xl relative text-slate-100 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
           <span className="text-slate-400 text-sm">🔍</span>
@@ -105,4 +110,3 @@ export function CommandPaletteModal({ isOpen, onClose, actions }: CommandPalette
     </div>
   );
 }
-

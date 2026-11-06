@@ -58,14 +58,18 @@ function HeroBanner() {
             "linear-gradient(90deg, rgba(99,102,241,0.1) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
           maskImage: "radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 80%)",
-          WebkitMaskImage: "radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 80%)",
         }}
       />
 
       {/* Top accent line */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.7), rgba(139,92,246,0.7), rgba(6,182,212,0.5), transparent)" }}
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(99,102,241,0.7), rgba(139,92,246,0.7), rgba(6,182,212,0.5), transparent)",
+        }}
       />
 
       <div className="relative z-10 px-6 sm:px-8 py-7 sm:py-9 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -107,12 +111,9 @@ function HeroBanner() {
           >
             Institutional Asset Protection
           </h2>
-          <p
-            className="text-sm sm:text-base font-medium max-w-xl"
-            style={{ color: "#6b7fa3" }}
-          >
-            Decentralized multi-signature freeze governance for regulated RWAs and
-            stablecoins on Stellar. Real-time CAP-0077 quarantine with quorum consensus.
+          <p className="text-sm sm:text-base font-medium max-w-xl" style={{ color: "#6b7fa3" }}>
+            Decentralized multi-signature freeze governance for regulated RWAs and stablecoins on
+            Stellar. Real-time CAP-0077 quarantine with quorum consensus.
           </p>
 
           {/* Stat pills */}
@@ -201,7 +202,9 @@ function HeroBanner() {
       {/* Bottom accent line */}
       <div
         className="absolute bottom-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent)" }}
+        style={{
+          background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent)",
+        }}
       />
     </div>
   );
@@ -220,10 +223,10 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { id: "overview",    label: "Command Center",    icon: "⚡", shortLabel: "Command" },
-  { id: "analytics",  label: "Analytics & Charts", icon: "📈", shortLabel: "Analytics" },
-  { id: "audit",      label: "Audit Trail",        icon: "📜", shortLabel: "Audit" },
-  { id: "parameters", label: "Contract Specs",     icon: "⚙️", shortLabel: "Specs" },
+  { id: "overview", label: "Command Center", icon: "⚡", shortLabel: "Command" },
+  { id: "analytics", label: "Analytics & Charts", icon: "📈", shortLabel: "Analytics" },
+  { id: "audit", label: "Audit Trail", icon: "📜", shortLabel: "Audit" },
+  { id: "parameters", label: "Contract Specs", icon: "⚙️", shortLabel: "Specs" },
 ];
 
 interface PremiumTabBarProps {
@@ -252,9 +255,11 @@ function PremiumTabBar({ activeTab, onSelect }: PremiumTabBarProps) {
             style={
               isActive
                 ? {
-                    background: "linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.8))",
+                    background:
+                      "linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.8))",
                     color: "#ffffff",
-                    boxShadow: "0 0 12px rgba(99,102,241,0.35), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow:
+                      "0 0 12px rgba(99,102,241,0.35), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
                   }
                 : {
                     color: "#6b7fa3",
@@ -368,7 +373,10 @@ function DashboardContent() {
         adminKey: publicKey || "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
       });
       playAlertSound("success");
-      success("Proposal Created", `Quarantine proposal initiated for ${p.assetCode} target ${p.target.slice(0, 6)}...`);
+      success(
+        "Proposal Created",
+        `Quarantine proposal initiated for ${p.assetCode} target ${p.target.slice(0, 6)}...`
+      );
     } catch (err: any) {
       playAlertSound("critical");
       const msg = err?.response?.data?.message || err?.message || "Failed to submit proposal";
@@ -384,7 +392,10 @@ function DashboardContent() {
         adminKey: publicKey || "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
       });
       playAlertSound("critical");
-      warning("Emergency Freeze Dispatched", `Quarantine vote recorded for target ${p.target.slice(0, 6)}...`);
+      warning(
+        "Emergency Freeze Dispatched",
+        `Quarantine vote recorded for target ${p.target.slice(0, 6)}...`
+      );
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Failed to execute freeze";
       toastError("Fast Freeze Failed", msg);
@@ -423,9 +434,7 @@ function DashboardContent() {
         <OverviewMetricCards />
 
         {/* ── TAB BAR + ASSET FILTERS ──────────────────────────── */}
-        <div
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1"
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
           <PremiumTabBar activeTab={activeTab} onSelect={setActiveTab} />
           <AssetFilterTabs activeAsset={activeAsset} onChange={setActiveAsset} />
         </div>
@@ -434,7 +443,8 @@ function DashboardContent() {
         <div
           className="h-px"
           style={{
-            background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.3), rgba(139,92,246,0.2), transparent)",
+            background:
+              "linear-gradient(90deg, transparent, rgba(99,102,241,0.3), rgba(139,92,246,0.2), transparent)",
           }}
         />
 
@@ -490,10 +500,7 @@ function DashboardContent() {
         detectedHighRiskAddress={detectedHighRisk}
       />
 
-      <AddressBookModal
-        isOpen={isAddressBookOpen}
-        onClose={() => setIsAddressBookOpen(false)}
-      />
+      <AddressBookModal isOpen={isAddressBookOpen} onClose={() => setIsAddressBookOpen(false)} />
 
       <CommandPaletteModal
         isOpen={isPaletteOpen}

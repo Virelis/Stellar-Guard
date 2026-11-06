@@ -23,9 +23,12 @@ export function TimeAgo({ timestamp, className = "" }: TimeAgoProps) {
   const fullDate = formatDateTime(timestamp);
 
   return (
-    <time dateTime={new Date(timestamp > 1e11 ? timestamp : timestamp * 1000).toISOString()} title={fullDate} className={`cursor-help ${className}`}>
+    <time
+      dateTime={new Date(timestamp > 1e11 ? timestamp : timestamp * 1000).toISOString()}
+      title={fullDate}
+      className={`cursor-help ${className}`}
+    >
       {relative}
     </time>
   );
 }
-

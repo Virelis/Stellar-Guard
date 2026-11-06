@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const API =
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // Per-asset suspicious thresholds. Falls back to DEFAULT for unknown assets.
 const THRESHOLDS: Record<string, number> = {
@@ -15,14 +16,25 @@ function threshold(asset: string): number {
   return THRESHOLDS[asset] ?? THRESHOLDS.DEFAULT;
 }
 
-interface Transfer { id: string; from: string; to: string; amount: number; asset: string; ts: string; }
-interface Props { onSuspicious: (msg: string) => void; }
+interface Transfer {
+  id: string;
+  from: string;
+  to: string;
+  amount: number;
+  asset: string;
+  ts: string;
+}
+interface Props {
+  onSuspicious: (msg: string) => void;
+}
 
 export function LedgerExplorer({ onSuspicious }: Props) {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const onSuspiciousRef = useRef(onSuspicious);
-  useEffect(() => { onSuspiciousRef.current = onSuspicious; });
+  useEffect(() => {
+    onSuspiciousRef.current = onSuspicious;
+  });
 
   // Track already-alerted transfer IDs to prevent re-alerting on every poll
   const alertedIds = useRef(new Set<string>());
@@ -38,11 +50,15 @@ export function LedgerExplorer({ onSuspicious }: Props) {
         );
         if (newSuspicious.length) {
           newSuspicious.forEach((t) => alertedIds.current.add(t.id));
-          onSuspiciousRef.current(`⚠️ ${newSuspicious.length} new high-volume transfer(s) detected`);
+          onSuspiciousRef.current(
+            `⚠️ ${newSuspicious.length} new high-volume transfer(s) detected`
+          );
         }
       } catch {
         // NetworkTimeout — silently retry
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     }
     poll();
     const id = setInterval(poll, 10_000);
@@ -54,7 +70,9 @@ export function LedgerExplorer({ onSuspicious }: Props) {
   return (
     <div className="bg-gray-100 dark:bg-stellar-card rounded-xl p-4 space-y-4">
       <h2 className="font-semibold text-lg">📡 Live Ledger Explorer</h2>
-      {loading ? <p className="text-gray-500 dark:text-gray-400 text-sm">Loading…</p> : (
+      {loading ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading…</p>
+      ) : (
         <>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={chartData}>
@@ -66,16 +84,20 @@ export function LedgerExplorer({ onSuspicious }: Props) {
           </ResponsiveContainer>
           <div className="overflow-auto max-h-64">
             <table className="w-full text-xs">
-              <thead><tr className="text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-700">
-                <th className="text-left py-1">Asset</th>
-                <th className="text-left py-1">From</th>
-                <th className="text-left py-1">To</th>
-                <th className="text-right py-1">Amount</th>
-              </tr></thead>
+              <thead>
+                <tr className="text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-700">
+                  <th className="text-left py-1">Asset</th>
+                  <th className="text-left py-1">From</th>
+                  <th className="text-left py-1">To</th>
+                  <th className="text-right py-1">Amount</th>
+                </tr>
+              </thead>
               <tbody>
                 {transfers.map((t) => (
-                  <tr key={t.id}
-                    className={`border-b border-gray-200 dark:border-gray-800 ${t.amount >= threshold(t.asset) ? "text-stellar-danger" : ""}`}>
+                  <tr
+                    key={t.id}
+                    className={`border-b border-gray-200 dark:border-gray-800 ${t.amount >= threshold(t.asset) ? "text-stellar-danger" : ""}`}
+                  >
                     <td className="py-1">{t.asset}</td>
                     <td className="py-1 font-mono">{t.from.slice(0, 8)}…</td>
                     <td className="py-1 font-mono">{t.to.slice(0, 8)}…</td>

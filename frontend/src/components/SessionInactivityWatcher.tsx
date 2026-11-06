@@ -74,7 +74,11 @@ export function SessionInactivityWatcher({
   if (!warningOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-slate-100 text-center animate-in zoom-in-95 duration-150">
         <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mx-auto text-xl text-amber-400 mb-3">
           ⏳
@@ -82,12 +86,11 @@ export function SessionInactivityWatcher({
 
         <h3 className="text-base font-bold text-white">Inactivity Security Warning</h3>
         <p className="text-xs text-slate-400 mt-1">
-          Your session has been idle. To protect multi-sig signing authority, your wallet will automatically disconnect in:
+          Your session has been idle. To protect multi-sig signing authority, your wallet will
+          automatically disconnect in:
         </p>
 
-        <div className="my-4 text-3xl font-black font-mono text-amber-400">
-          {countdown}s
-        </div>
+        <div className="my-4 text-3xl font-black font-mono text-amber-400">{countdown}s</div>
 
         <div className="flex gap-2">
           <button

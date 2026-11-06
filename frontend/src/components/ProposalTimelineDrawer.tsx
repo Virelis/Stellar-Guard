@@ -29,7 +29,10 @@ export function ProposalTimelineDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
 
       <div className="fixed inset-y-0 right-0 max-w-md w-full bg-slate-900 border-l border-slate-700 p-6 shadow-2xl flex flex-col text-slate-100 animate-in slide-in-from-right duration-200 text-xs">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -51,8 +54,8 @@ export function ProposalTimelineDrawer({
                 ev.status === "completed"
                   ? "bg-emerald-500 ring-4 ring-emerald-500/20"
                   : ev.status === "current"
-                  ? "bg-indigo-500 ring-4 ring-indigo-500/20 animate-pulse"
-                  : "bg-slate-700";
+                    ? "bg-indigo-500 ring-4 ring-indigo-500/20 animate-pulse"
+                    : "bg-slate-700";
 
               return (
                 <div key={ev.id} className="relative">
@@ -84,4 +87,3 @@ export function ProposalTimelineDrawer({
     </div>
   );
 }
-

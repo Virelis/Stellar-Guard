@@ -26,15 +26,10 @@ export function VirtualScrollTable({
 
       {totalCount !== undefined && displayedCount !== undefined && totalCount > displayedCount && (
         <div className="bg-slate-950/80 px-4 py-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-          <span>
-            Displaying latest {displayedCount} records
-          </span>
-          <span>
-            {totalCount - displayedCount} older transactions buffered
-          </span>
+          <span>Displaying latest {displayedCount} records</span>
+          <span>{totalCount - displayedCount} older transactions buffered</span>
         </div>
       )}
     </div>
   );
 }
-

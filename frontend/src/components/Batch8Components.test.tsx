@@ -18,13 +18,7 @@ describe("Batch 8: Advanced Components & Integrations", () => {
       const onSelect = jest.fn();
       const onClose = jest.fn();
 
-      render(
-        <WalletSelectorModal
-          isOpen={true}
-          onClose={onClose}
-          onSelectWallet={onSelect}
-        />
-      );
+      render(<WalletSelectorModal isOpen={true} onClose={onClose} onSelectWallet={onSelect} />);
 
       expect(screen.getByText("Freighter Wallet")).toBeInTheDocument();
       expect(screen.getByText("Albedo Signer")).toBeInTheDocument();
@@ -37,11 +31,7 @@ describe("Batch 8: Advanced Components & Integrations", () => {
 
     it("renders nothing when closed", () => {
       const { container } = render(
-        <WalletSelectorModal
-          isOpen={false}
-          onClose={jest.fn()}
-          onSelectWallet={jest.fn()}
-        />
+        <WalletSelectorModal isOpen={false} onClose={jest.fn()} onSelectWallet={jest.fn()} />
       );
       expect(container).toBeEmptyDOMElement();
     });
@@ -135,4 +125,3 @@ describe("Batch 8: Advanced Components & Integrations", () => {
     });
   });
 });
-

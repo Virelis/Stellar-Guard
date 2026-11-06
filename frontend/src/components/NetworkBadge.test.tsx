@@ -16,9 +16,7 @@ test("renders TESTNET badge when Freighter is on testnet", async () => {
     sorobanRpcUrl: "",
   });
   render(<NetworkBadge />);
-  await waitFor(() =>
-    expect(screen.getByTestId("network-badge")).toHaveTextContent("TESTNET")
-  );
+  await waitFor(() => expect(screen.getByTestId("network-badge")).toHaveTextContent("TESTNET"));
   expect(screen.queryByTestId("network-mismatch-warning")).not.toBeInTheDocument();
 });
 
@@ -30,9 +28,7 @@ test("renders MAINNET badge when Freighter is on mainnet", async () => {
     sorobanRpcUrl: "",
   });
   render(<NetworkBadge />);
-  await waitFor(() =>
-    expect(screen.getByTestId("network-badge")).toHaveTextContent("MAINNET")
-  );
+  await waitFor(() => expect(screen.getByTestId("network-badge")).toHaveTextContent("MAINNET"));
 });
 
 test("shows mismatch warning when Freighter is on mainnet but app expects testnet", async () => {
@@ -43,9 +39,7 @@ test("shows mismatch warning when Freighter is on mainnet but app expects testne
     sorobanRpcUrl: "",
   });
   render(<NetworkBadge />);
-  await waitFor(() =>
-    expect(screen.getByTestId("network-mismatch-warning")).toBeInTheDocument()
-  );
+  await waitFor(() => expect(screen.getByTestId("network-mismatch-warning")).toBeInTheDocument());
 });
 
 test("renders nothing when getNetworkDetails throws", async () => {

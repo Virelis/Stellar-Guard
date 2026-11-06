@@ -16,7 +16,8 @@ export function InstitutionalFooter() {
             <Sep1DomainBadge />
           </div>
           <p className="text-[11px] text-slate-500 max-w-md">
-            Decentralized multi-signature asset quarantine and RWA compliance governance infrastructure for the Stellar network.
+            Decentralized multi-signature asset quarantine and RWA compliance governance
+            infrastructure for the Stellar network.
           </p>
         </div>
 
@@ -65,10 +66,11 @@ export function InstitutionalFooter() {
       </div>
 
       <div className="max-w-7xl mx-auto mt-6 pt-4 border-t border-slate-900 text-center text-[10px] text-slate-600 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <span>© {new Date().getFullYear()} Stellar-Guard Open Source Initiative. MIT Licensed.</span>
+        <span>
+          © {new Date().getFullYear()} Stellar-Guard Open Source Initiative. MIT Licensed.
+        </span>
         <span>Cryptographically secured on Soroban Smart Contracts</span>
       </div>
     </footer>
   );
 }
-

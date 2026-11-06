@@ -10,10 +10,7 @@ function useCountUp(target: number, duration = 1200): number {
   useEffect(() => {
     // Guard: if rAF is not a real browser implementation (e.g. jsdom polyfill
     // that fires asynchronously), just show the final value immediately.
-    if (
-      typeof window === "undefined" ||
-      typeof window.requestAnimationFrame !== "function"
-    ) {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
       setCurrent(target);
       return;
     }
@@ -53,60 +50,63 @@ function useCountUp(target: number, duration = 1200): number {
 /* ── Card accent colour configs ──────────────────────────────── */
 type AccentColor = "indigo" | "violet" | "cyan" | "emerald";
 
-const ACCENT: Record<AccentColor, {
-  iconGradient: string;
-  iconShadow: string;
-  cardBorder: string;
-  cardGlow: string;
-  badgeBg: string;
-  badgeText: string;
-  badgeBorder: string;
-  valueShadow: string;
-  topLine: string;
-}> = {
+const ACCENT: Record<
+  AccentColor,
+  {
+    iconGradient: string;
+    iconShadow: string;
+    cardBorder: string;
+    cardGlow: string;
+    badgeBg: string;
+    badgeText: string;
+    badgeBorder: string;
+    valueShadow: string;
+    topLine: string;
+  }
+> = {
   indigo: {
-    iconGradient:  "linear-gradient(135deg, #4338ca 0%, #6366f1 60%, #818cf8 100%)",
-    iconShadow:    "0 0 12px rgba(99,102,241,0.6), 0 0 24px rgba(99,102,241,0.3)",
-    cardBorder:    "rgba(99,102,241,0.25)",
-    cardGlow:      "0 0 20px rgba(99,102,241,0.08), 0 4px 24px rgba(0,0,0,0.45)",
-    badgeBg:       "rgba(99,102,241,0.12)",
-    badgeText:     "#818cf8",
-    badgeBorder:   "rgba(99,102,241,0.3)",
-    valueShadow:   "0 0 20px rgba(129,140,248,0.3)",
-    topLine:       "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)",
+    iconGradient: "linear-gradient(135deg, #4338ca 0%, #6366f1 60%, #818cf8 100%)",
+    iconShadow: "0 0 12px rgba(99,102,241,0.6), 0 0 24px rgba(99,102,241,0.3)",
+    cardBorder: "rgba(99,102,241,0.25)",
+    cardGlow: "0 0 20px rgba(99,102,241,0.08), 0 4px 24px rgba(0,0,0,0.45)",
+    badgeBg: "rgba(99,102,241,0.12)",
+    badgeText: "#818cf8",
+    badgeBorder: "rgba(99,102,241,0.3)",
+    valueShadow: "0 0 20px rgba(129,140,248,0.3)",
+    topLine: "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)",
   },
   violet: {
-    iconGradient:  "linear-gradient(135deg, #6d28d9 0%, #8b5cf6 60%, #a78bfa 100%)",
-    iconShadow:    "0 0 12px rgba(139,92,246,0.6), 0 0 24px rgba(139,92,246,0.3)",
-    cardBorder:    "rgba(139,92,246,0.25)",
-    cardGlow:      "0 0 20px rgba(139,92,246,0.08), 0 4px 24px rgba(0,0,0,0.45)",
-    badgeBg:       "rgba(139,92,246,0.12)",
-    badgeText:     "#a78bfa",
-    badgeBorder:   "rgba(139,92,246,0.3)",
-    valueShadow:   "0 0 20px rgba(167,139,250,0.3)",
-    topLine:       "linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent)",
+    iconGradient: "linear-gradient(135deg, #6d28d9 0%, #8b5cf6 60%, #a78bfa 100%)",
+    iconShadow: "0 0 12px rgba(139,92,246,0.6), 0 0 24px rgba(139,92,246,0.3)",
+    cardBorder: "rgba(139,92,246,0.25)",
+    cardGlow: "0 0 20px rgba(139,92,246,0.08), 0 4px 24px rgba(0,0,0,0.45)",
+    badgeBg: "rgba(139,92,246,0.12)",
+    badgeText: "#a78bfa",
+    badgeBorder: "rgba(139,92,246,0.3)",
+    valueShadow: "0 0 20px rgba(167,139,250,0.3)",
+    topLine: "linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent)",
   },
   cyan: {
-    iconGradient:  "linear-gradient(135deg, #0e7490 0%, #06b6d4 60%, #22d3ee 100%)",
-    iconShadow:    "0 0 12px rgba(6,182,212,0.6), 0 0 24px rgba(6,182,212,0.3)",
-    cardBorder:    "rgba(6,182,212,0.25)",
-    cardGlow:      "0 0 20px rgba(6,182,212,0.08), 0 4px 24px rgba(0,0,0,0.45)",
-    badgeBg:       "rgba(6,182,212,0.12)",
-    badgeText:     "#22d3ee",
-    badgeBorder:   "rgba(6,182,212,0.3)",
-    valueShadow:   "0 0 20px rgba(34,211,238,0.3)",
-    topLine:       "linear-gradient(90deg, transparent, rgba(6,182,212,0.6), transparent)",
+    iconGradient: "linear-gradient(135deg, #0e7490 0%, #06b6d4 60%, #22d3ee 100%)",
+    iconShadow: "0 0 12px rgba(6,182,212,0.6), 0 0 24px rgba(6,182,212,0.3)",
+    cardBorder: "rgba(6,182,212,0.25)",
+    cardGlow: "0 0 20px rgba(6,182,212,0.08), 0 4px 24px rgba(0,0,0,0.45)",
+    badgeBg: "rgba(6,182,212,0.12)",
+    badgeText: "#22d3ee",
+    badgeBorder: "rgba(6,182,212,0.3)",
+    valueShadow: "0 0 20px rgba(34,211,238,0.3)",
+    topLine: "linear-gradient(90deg, transparent, rgba(6,182,212,0.6), transparent)",
   },
   emerald: {
-    iconGradient:  "linear-gradient(135deg, #065f46 0%, #059669 60%, #34d399 100%)",
-    iconShadow:    "0 0 12px rgba(5,150,105,0.6), 0 0 24px rgba(5,150,105,0.3)",
-    cardBorder:    "rgba(34,197,94,0.25)",
-    cardGlow:      "0 0 20px rgba(34,197,94,0.08), 0 4px 24px rgba(0,0,0,0.45)",
-    badgeBg:       "rgba(34,197,94,0.12)",
-    badgeText:     "#4ade80",
-    badgeBorder:   "rgba(34,197,94,0.3)",
-    valueShadow:   "0 0 20px rgba(74,222,128,0.3)",
-    topLine:       "linear-gradient(90deg, transparent, rgba(34,197,94,0.6), transparent)",
+    iconGradient: "linear-gradient(135deg, #065f46 0%, #059669 60%, #34d399 100%)",
+    iconShadow: "0 0 12px rgba(5,150,105,0.6), 0 0 24px rgba(5,150,105,0.3)",
+    cardBorder: "rgba(34,197,94,0.25)",
+    cardGlow: "0 0 20px rgba(34,197,94,0.08), 0 4px 24px rgba(0,0,0,0.45)",
+    badgeBg: "rgba(34,197,94,0.12)",
+    badgeText: "#4ade80",
+    badgeBorder: "rgba(34,197,94,0.3)",
+    valueShadow: "0 0 20px rgba(74,222,128,0.3)",
+    topLine: "linear-gradient(90deg, transparent, rgba(34,197,94,0.6), transparent)",
   },
 };
 
@@ -114,7 +114,7 @@ const ACCENT: Record<AccentColor, {
 interface MetricCardProps {
   title: string;
   value: string | number;
-  numericValue?: number;   // If provided, count-up animation runs on this
+  numericValue?: number; // If provided, count-up animation runs on this
   change?: string;
   isPositive?: boolean;
   icon: string;
@@ -158,10 +158,7 @@ function MetricCard({
       }}
     >
       {/* Top neon accent line */}
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: a.topLine }}
-      />
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: a.topLine }} />
 
       {/* Inner content */}
       <div className="p-5">
@@ -198,10 +195,8 @@ function MetricCard({
               <span
                 className="text-[10px] font-bold px-1.5 py-0.5 rounded-full tracking-wide"
                 style={{
-                  background: isPositive
-                    ? "rgba(34,197,94,0.12)"
-                    : "rgba(245,158,11,0.12)",
-                  color:  isPositive ? "#4ade80" : "#fbbf24",
+                  background: isPositive ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)",
+                  color: isPositive ? "#4ade80" : "#fbbf24",
                   border: `1px solid ${isPositive ? "rgba(34,197,94,0.25)" : "rgba(245,158,11,0.25)"}`,
                 }}
               >
@@ -211,10 +206,7 @@ function MetricCard({
           </div>
 
           {subtitle && (
-            <p
-              className="text-[11px] mt-1.5 font-medium"
-              style={{ color: "#4a5568" }}
-            >
+            <p className="text-[11px] mt-1.5 font-medium" style={{ color: "#4a5568" }}>
               {subtitle}
             </p>
           )}

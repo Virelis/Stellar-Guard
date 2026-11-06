@@ -4,16 +4,37 @@ import { authMiddleware, requireRole } from "../middleware/auth";
 
 export const auditRouter = Router();
 
-auditRouter.get("/", (req: Request, res: Response) => {
+auditRouter.get(["/", "/logs"], (req: Request, res: Response) => {
   const target = typeof req.query.target === "string" ? req.query.target : undefined;
   const eventType = typeof req.query.eventType === "string" ? req.query.eventType : undefined;
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
   const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
 
   const results = queryAuditLogs({ target, eventType, limit, offset });
+  const normalizedLogs = results.logs.map((l) => ({
+    id: l.id,
+    eventType: l.eventType,
+    event_type: l.eventType,
+    assetCode: l.assetCode,
+    asset_code: l.assetCode,
+    issuer: l.issuer,
+    target: l.target,
+    adminKey: l.adminKey,
+    admin_key: l.adminKey,
+    details: l.details,
+    createdAt: l.createdAt,
+    created_at: l.createdAt,
+  }));
+
+  if (req.path === "/logs") {
+    res.status(200).json(normalizedLogs);
+    return;
+  }
+
   res.status(200).json({
     success: true,
-    ...results,
+    total: results.total,
+    logs: normalizedLogs,
     limit,
     offset,
   });

@@ -9,10 +9,7 @@ interface QuickAccountSearchProps {
   onInitiateFreeze?: (address: string) => void;
 }
 
-export function QuickAccountSearch({
-  onSelectAccount,
-  onInitiateFreeze,
-}: QuickAccountSearchProps) {
+export function QuickAccountSearch({ onSelectAccount, onInitiateFreeze }: QuickAccountSearchProps) {
   const [query, setQuery] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
@@ -108,4 +105,3 @@ export function QuickAccountSearch({
     </div>
   );
 }
-

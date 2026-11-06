@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
 import { getActiveNetwork, switchNetwork, getAllNetworks } from "../services/networkManager";
+import { authMiddleware, requireRole } from "../middleware/auth";
 
 export const networkRouter = Router();
 
@@ -44,21 +45,26 @@ networkRouter.get("/all", (_req: Request, res: Response) => {
   });
 });
 
-networkRouter.post("/switch", (req: Request, res: Response) => {
-  const { network } = req.body;
-  if (!network || typeof network !== "string") {
-    res.status(400).json({ error: "Missing required field 'network'" });
-    return;
-  }
+networkRouter.post(
+  "/switch",
+  authMiddleware,
+  requireRole("admin"),
+  (req: Request, res: Response) => {
+    const { network } = req.body;
+    if (!network || typeof network !== "string") {
+      res.status(400).json({ error: "Missing required field 'network'" });
+      return;
+    }
 
-  try {
-    const updated = switchNetwork(network);
-    res.status(200).json({
-      success: true,
-      message: `Active network switched to '${updated.name}'`,
-      network: updated,
-    });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    try {
+      const updated = switchNetwork(network);
+      res.status(200).json({
+        success: true,
+        message: `Active network switched to '${updated.name}'`,
+        network: updated,
+      });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
   }
-});
+);

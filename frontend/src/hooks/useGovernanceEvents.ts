@@ -82,4 +82,3 @@ export function useGovernanceEvents(onEvent?: (event: GovernanceLiveEvent) => vo
 
   return { events, status, lastEvent };
 }
-

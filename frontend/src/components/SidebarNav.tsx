@@ -10,19 +10,14 @@ interface SidebarNavProps {
 }
 
 const NAV_ITEMS = [
-  { id: "overview",    label: "Command Center",   icon: "⚡", accent: "#818cf8" },
-  { id: "proposals",  label: "Freeze Proposals",  icon: "⚖️",  accent: "#a78bfa" },
-  { id: "analytics",  label: "Telemetry & Charts", icon: "📈", accent: "#22d3ee" },
-  { id: "audit",      label: "Audit Trail",        icon: "📜", accent: "#818cf8" },
-  { id: "parameters", label: "Contract Specs",     icon: "⚙️",  accent: "#a78bfa" },
+  { id: "overview", label: "Command Center", icon: "⚡", accent: "#818cf8" },
+  { id: "proposals", label: "Freeze Proposals", icon: "⚖️", accent: "#a78bfa" },
+  { id: "analytics", label: "Telemetry & Charts", icon: "📈", accent: "#22d3ee" },
+  { id: "audit", label: "Audit Trail", icon: "📜", accent: "#818cf8" },
+  { id: "parameters", label: "Contract Specs", icon: "⚙️", accent: "#a78bfa" },
 ] as const;
 
-export function SidebarNav({
-  collapsed,
-  onToggle,
-  activeItem,
-  onSelectItem,
-}: SidebarNavProps) {
+export function SidebarNav({ collapsed, onToggle, activeItem, onSelectItem }: SidebarNavProps) {
   return (
     <aside
       className="flex flex-col justify-between transition-all duration-300 select-none"
@@ -53,7 +48,11 @@ export function SidebarNav({
           <button
             onClick={onToggle}
             className="p-1.5 rounded-lg transition-all duration-200"
-            style={{ color: "#4a5568", marginLeft: collapsed ? "auto" : undefined, marginRight: collapsed ? "auto" : undefined }}
+            style={{
+              color: "#4a5568",
+              marginLeft: collapsed ? "auto" : undefined,
+              marginRight: collapsed ? "auto" : undefined,
+            }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = "#818cf8";
               (e.currentTarget as HTMLButtonElement).style.background = "rgba(99,102,241,0.1)";
@@ -84,9 +83,7 @@ export function SidebarNav({
                   background: isActive
                     ? "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))"
                     : "transparent",
-                  border: isActive
-                    ? "1px solid rgba(99,102,241,0.3)"
-                    : "1px solid transparent",
+                  border: isActive ? "1px solid rgba(99,102,241,0.3)" : "1px solid transparent",
                   color: isActive ? "#c7d2fe" : "#4a5568",
                   boxShadow: isActive
                     ? "0 0 12px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.04)"
@@ -94,8 +91,10 @@ export function SidebarNav({
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(99,102,241,0.07)";
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(99,102,241,0.15)";
+                    (e.currentTarget as HTMLButtonElement).style.background =
+                      "rgba(99,102,241,0.07)";
+                    (e.currentTarget as HTMLButtonElement).style.borderColor =
+                      "rgba(99,102,241,0.15)";
                     (e.currentTarget as HTMLButtonElement).style.color = "#94a3b8";
                   }
                 }}
@@ -124,9 +123,7 @@ export function SidebarNav({
                   {item.icon}
                 </span>
 
-                {!collapsed && (
-                  <span className="truncate tracking-wide">{item.label}</span>
-                )}
+                {!collapsed && <span className="truncate tracking-wide">{item.label}</span>}
 
                 {/* Active indicator dot on right */}
                 {!collapsed && isActive && (
@@ -161,10 +158,7 @@ export function SidebarNav({
               >
                 Protocol
               </div>
-              <div
-                className="text-[11px] font-mono font-bold mt-0.5"
-                style={{ color: "#818cf8" }}
-              >
+              <div className="text-[11px] font-mono font-bold mt-0.5" style={{ color: "#818cf8" }}>
                 CAP-0077 v1.0
               </div>
             </div>

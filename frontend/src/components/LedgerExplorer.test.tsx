@@ -5,7 +5,11 @@ import { LedgerExplorer } from "../components/LedgerExplorer";
 
 jest.mock("axios");
 // recharts uses ResizeObserver which isn't in jsdom
-global.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 import axios from "axios";
 const mockGet = axios.get as jest.Mock;
@@ -15,7 +19,14 @@ const ADDR_B = "GBVZDJKFKBKRHALTAQTJZUT4JXNXATGGVGFLIF5MHXKJFNYWHHQWYFQ2";
 
 const TRANSFERS = [
   { id: "1", from: ADDR_A, to: ADDR_B, amount: 500, asset: "XLM", ts: "2026-05-14T12:00:00Z" },
-  { id: "2", from: ADDR_A, to: ADDR_B, amount: 50_000_000, asset: "XLM", ts: "2026-05-14T12:01:00Z" },
+  {
+    id: "2",
+    from: ADDR_A,
+    to: ADDR_B,
+    amount: 50_000_000,
+    asset: "XLM",
+    ts: "2026-05-14T12:01:00Z",
+  },
 ];
 
 beforeEach(() => jest.clearAllMocks());
@@ -36,9 +47,9 @@ test("calls onSuspicious for high-volume transfer", async () => {
   const onSuspicious = jest.fn();
   mockGet.mockResolvedValue({ data: TRANSFERS });
   render(<LedgerExplorer onSuspicious={onSuspicious} />);
-  await waitFor(() => expect(onSuspicious).toHaveBeenCalledWith(
-    expect.stringContaining("high-volume")
-  ));
+  await waitFor(() =>
+    expect(onSuspicious).toHaveBeenCalledWith(expect.stringContaining("high-volume"))
+  );
 });
 
 test("does not call onSuspicious for normal transfer", async () => {
