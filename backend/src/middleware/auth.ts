@@ -18,8 +18,20 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "stellar-guard-dev-secret-key-at-least-32-chars-long";
-const AUTH_REQUIRED = process.env.AUTH_REQUIRED === "true";
+const DEV_SECRET = "stellar-guard-dev-secret-key-at-least-32-chars-long";
+const JWT_SECRET = process.env.JWT_SECRET ?? DEV_SECRET;
+
+if (
+  process.env.NODE_ENV === "production" &&
+  (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_SECRET)
+) {
+  throw new Error(
+    "FATAL: JWT_SECRET must be explicitly set to a cryptographically secure string in production"
+  );
+}
+
+const isProduction = process.env.NODE_ENV === "production";
+const isAuthEnforced = isProduction || process.env.AUTH_REQUIRED === "true";
 
 function base64UrlEncode(str: string): string {
   return Buffer.from(str)
@@ -37,7 +49,11 @@ function base64UrlDecode(str: string): string {
   return Buffer.from(base64, "base64").toString("utf8");
 }
 
-export function signAuthToken(adminKey: string, role: Role = "admin", expiresInSeconds: number = 86400): string {
+export function signAuthToken(
+  adminKey: string,
+  role: Role = "admin",
+  expiresInSeconds: number = 86400
+): string {
   const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const payload: AuthPayload = {
@@ -74,7 +90,11 @@ export function verifyAuthToken(token: string): AuthPayload | null {
       .replace(/\+/g, "-")
       .replace(/\//g, "_");
 
-    if (signature !== expectedSignature) return null;
+    const sigBuf = Buffer.from(signature, "utf8");
+    const expBuf = Buffer.from(expectedSignature, "utf8");
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return null;
+    }
 
     const payload: AuthPayload = JSON.parse(base64UrlDecode(encodedPayload));
     const now = Math.floor(Date.now() / 1000);
@@ -89,8 +109,10 @@ export function verifyAuthToken(token: string): AuthPayload | null {
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    if (AUTH_REQUIRED) {
-      res.status(401).json({ error: "Unauthorized", message: "Missing or invalid Authorization header" });
+    if (isAuthEnforced) {
+      res
+        .status(401)
+        .json({ error: "Unauthorized", message: "Missing or invalid Authorization header" });
       return;
     }
     // In dev / non-strict mode, pass through
@@ -110,11 +132,13 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
 export function requireRole(...allowedRoles: Role[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (!AUTH_REQUIRED && !req.auth) {
+    if (!isAuthEnforced && !req.auth) {
       return next();
     }
     if (!req.auth || !allowedRoles.includes(req.auth.role)) {
-      res.status(403).json({ error: "Forbidden", message: "Insufficient permissions for this operation" });
+      res
+        .status(403)
+        .json({ error: "Forbidden", message: "Insufficient permissions for this operation" });
       return;
     }
     next();

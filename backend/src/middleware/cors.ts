@@ -23,7 +23,13 @@ export const corsMiddleware = cors({
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID", "Accept"],
-  exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset", "Retry-After"],
+  exposedHeaders: [
+    "X-Request-ID",
+    "RateLimit-Limit",
+    "RateLimit-Remaining",
+    "RateLimit-Reset",
+    "Retry-After",
+  ],
   maxAge: 86400, // 24 hours preflight cache
   credentials: true,
 });

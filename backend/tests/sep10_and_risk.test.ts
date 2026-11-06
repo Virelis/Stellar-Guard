@@ -13,9 +13,7 @@ describe("Batch 6: SEP-0010, AML Risk, Simulation & Maintenance Integration", ()
 
   describe("SEP-0010 WebAuth Endpoints (/api/auth)", () => {
     it("should return a challenge transaction with correct network and client domain", async () => {
-      const res = await request(app)
-        .get("/api/auth/challenge")
-        .query({ account: validAccount });
+      const res = await request(app).get("/api/auth/challenge").query({ account: validAccount });
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("transaction");
@@ -73,8 +71,7 @@ describe("Batch 6: SEP-0010, AML Risk, Simulation & Maintenance Integration", ()
     });
 
     it("should expose risk assessment via GET /api/risk/score/:account", async () => {
-      const res = await request(app)
-        .get(`/api/risk/score/${validAccount}`);
+      const res = await request(app).get(`/api/risk/score/${validAccount}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("riskScore");
@@ -135,13 +132,11 @@ describe("Batch 6: SEP-0010, AML Risk, Simulation & Maintenance Integration", ()
     const issuerKp = StellarSdk.Keypair.random();
 
     it("should reject self-freeze attempts when target equals issuer", async () => {
-      const res = await request(app)
-        .post("/api/freeze/simulate")
-        .send({
-          assetCode: "USDC",
-          issuer: issuerKp.publicKey(),
-          target: issuerKp.publicKey(),
-        });
+      const res = await request(app).post("/api/freeze/simulate").send({
+        assetCode: "USDC",
+        issuer: issuerKp.publicKey(),
+        target: issuerKp.publicKey(),
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe("SelfFreezeNotAllowed");
@@ -149,13 +144,11 @@ describe("Batch 6: SEP-0010, AML Risk, Simulation & Maintenance Integration", ()
 
     it("should preview quorum progress and fee estimates for valid target", async () => {
       const targetKp = StellarSdk.Keypair.random();
-      const res = await request(app)
-        .post("/api/freeze/simulate")
-        .send({
-          assetCode: "USDC",
-          issuer: issuerKp.publicKey(),
-          target: targetKp.publicKey(),
-        });
+      const res = await request(app).post("/api/freeze/simulate").send({
+        assetCode: "USDC",
+        issuer: issuerKp.publicKey(),
+        target: targetKp.publicKey(),
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.valid).toBe(true);

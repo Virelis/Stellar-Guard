@@ -32,7 +32,9 @@ export class CursorStore {
     try {
       this.ensureTable();
       const db = getDb();
-      const row = db.prepare(`SELECT cursor FROM stream_cursors WHERE stream_name = ?`).get(streamName) as {
+      const row = db
+        .prepare(`SELECT cursor FROM stream_cursors WHERE stream_name = ?`)
+        .get(streamName) as {
         cursor: string;
       };
       if (row?.cursor) {

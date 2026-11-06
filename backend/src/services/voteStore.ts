@@ -22,20 +22,29 @@ export interface VoteRow {
   createdAt: number; // unix epoch seconds of the first vote
 }
 
-export function recordVote(assetCode: string, issuer: string, target: string, adminKey: string): number {
+export function recordVote(
+  assetCode: string,
+  issuer: string,
+  target: string,
+  adminKey: string
+): number {
   const db = getDb();
   const key = `${assetCode}:${issuer}:${target}`;
   db.prepare(
     `INSERT OR IGNORE INTO votes (vote_key, asset_code, issuer, target, admin_key) VALUES (?,?,?,?,?)`
   ).run(key, assetCode, issuer, target, adminKey);
-  const row = db.prepare(`SELECT COUNT(*) as cnt FROM votes WHERE vote_key = ?`).get(key) as { cnt: number };
+  const row = db.prepare(`SELECT COUNT(*) as cnt FROM votes WHERE vote_key = ?`).get(key) as {
+    cnt: number;
+  };
   return row.cnt;
 }
 
 export function getVotes(assetCode: string, issuer: string, target: string): VoteRow | null {
   const db = getDb();
   const key = `${assetCode}:${issuer}:${target}`;
-  const rows = db.prepare(`SELECT admin_key, created_at FROM votes WHERE vote_key = ?`).all(key) as { admin_key: string; created_at: number }[];
+  const rows = db
+    .prepare(`SELECT admin_key, created_at FROM votes WHERE vote_key = ?`)
+    .all(key) as { admin_key: string; created_at: number }[];
   if (!rows.length) return null;
   const createdAt = Math.min(...rows.map((r) => r.created_at));
   return { assetCode, issuer, target, voters: rows.map((r) => r.admin_key), createdAt };
@@ -48,12 +57,25 @@ export function clearVotes(assetCode: string, issuer: string, target: string): v
 
 export function listProposals(): VoteRow[] {
   const db = getDb();
-  const keys = db.prepare(`SELECT DISTINCT vote_key, asset_code, issuer, target FROM votes`).all() as {
-    vote_key: string; asset_code: string; issuer: string; target: string;
+  const keys = db
+    .prepare(`SELECT DISTINCT vote_key, asset_code, issuer, target FROM votes`)
+    .all() as {
+    vote_key: string;
+    asset_code: string;
+    issuer: string;
+    target: string;
   }[];
   return keys.map((k) => {
-    const rows = db.prepare(`SELECT admin_key, created_at FROM votes WHERE vote_key = ?`).all(k.vote_key) as { admin_key: string; created_at: number }[];
+    const rows = db
+      .prepare(`SELECT admin_key, created_at FROM votes WHERE vote_key = ?`)
+      .all(k.vote_key) as { admin_key: string; created_at: number }[];
     const createdAt = Math.min(...rows.map((r) => r.created_at));
-    return { assetCode: k.asset_code, issuer: k.issuer, target: k.target, voters: rows.map((r) => r.admin_key), createdAt };
+    return {
+      assetCode: k.asset_code,
+      issuer: k.issuer,
+      target: k.target,
+      voters: rows.map((r) => r.admin_key),
+      createdAt,
+    };
   });
 }

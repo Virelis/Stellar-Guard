@@ -1,7 +1,14 @@
 export interface ParsedMemo {
   rawType: string;
   rawValue: string;
-  category: "travel_rule" | "incident_ticket" | "invoice" | "hash_digest" | "numeric_id" | "generic_text" | "empty";
+  category:
+    | "travel_rule"
+    | "incident_ticket"
+    | "invoice"
+    | "hash_digest"
+    | "numeric_id"
+    | "generic_text"
+    | "empty";
   referenceId?: string;
   isCompliantFormat: boolean;
   sanitized: string;

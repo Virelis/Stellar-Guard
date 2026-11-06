@@ -48,7 +48,20 @@ export function loadConfig(): AppConfig {
   const freezeContractId = process.env.FREEZE_CONTRACT_ID ?? "";
   const allowedOrigin = process.env.ALLOWED_ORIGIN ?? "http://localhost:3000";
   const jwtSecret = process.env.JWT_SECRET ?? "stellar-guard-dev-secret-key-at-least-32-chars-long";
-  const authRequired = process.env.AUTH_REQUIRED === "true";
+  if (nodeEnv === "production") {
+    if (
+      !process.env.JWT_SECRET ||
+      jwtSecret === "stellar-guard-dev-secret-key-at-least-32-chars-long"
+    ) {
+      throw new Error(
+        "FATAL: JWT_SECRET must be set to a cryptographically secure string in production"
+      );
+    }
+    if (jwtSecret.length < 32) {
+      throw new Error("FATAL: JWT_SECRET must be at least 32 characters in production");
+    }
+  }
+  const authRequired = nodeEnv === "production" || process.env.AUTH_REQUIRED === "true";
   const rateLimitWindowMs = parseEnvNumber("RATE_LIMIT_WINDOW_MS", 60000);
   const rateLimitMax = parseEnvNumber("RATE_LIMIT_MAX", 100);
 

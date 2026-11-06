@@ -36,7 +36,9 @@ export function createRateLimiter(options: {
     record.timestamps = record.timestamps.filter((ts) => ts > cutoff);
 
     const remaining = Math.max(0, options.maxRequests - record.timestamps.length);
-    const resetSeconds = Math.ceil((options.windowMs - (now - (record.timestamps[0] || now))) / 1000);
+    const resetSeconds = Math.ceil(
+      (options.windowMs - (now - (record.timestamps[0] || now))) / 1000
+    );
 
     res.setHeader("RateLimit-Limit", options.maxRequests);
     res.setHeader("RateLimit-Remaining", remaining);

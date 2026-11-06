@@ -47,7 +47,9 @@ function connectStream() {
       if (persisted) lastCursor = persisted;
     }
     const s = getServer();
-    logger.info(`[HorizonMonitor] Connecting to Horizon stream at ${HORIZON_URL} (cursor: ${lastCursor})`);
+    logger.info(
+      `[HorizonMonitor] Connecting to Horizon stream at ${HORIZON_URL} (cursor: ${lastCursor})`
+    );
 
     streamCloseFn = s
       .payments()
@@ -106,7 +108,9 @@ function scheduleReconnect() {
   const jitter = Math.floor(Math.random() * 1000);
   const delay = backoff + jitter;
 
-  logger.info(`[HorizonMonitor] Scheduling stream reconnect attempt #${reconnectAttempts} in ${delay}ms`);
+  logger.info(
+    `[HorizonMonitor] Scheduling stream reconnect attempt #${reconnectAttempts} in ${delay}ms`
+  );
   if (reconnectTimeout) clearTimeout(reconnectTimeout);
   reconnectTimeout = setTimeout(() => {
     connectStream();

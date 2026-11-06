@@ -3,8 +3,7 @@ import * as StellarSdk from "@stellar/stellar-sdk";
 
 export const xdrRouter = Router();
 
-const DEFAULT_PASSPHRASE =
-  process.env.NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
+const DEFAULT_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
 
 xdrRouter.post("/decode", async (req: Request, res: Response) => {
   const { xdr, networkPassphrase } = req.body;

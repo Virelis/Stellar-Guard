@@ -10,13 +10,25 @@
  */
 
 // ── In-memory voteStore mock ──────────────────────────────────────────────────
-type VoteRow = { assetCode: string; issuer: string; target: string; voters: string[]; createdAt: number };
+type VoteRow = {
+  assetCode: string;
+  issuer: string;
+  target: string;
+  voters: string[];
+  createdAt: number;
+};
 const _store = new Map<string, VoteRow>();
 
 jest.mock("../src/services/voteStore", () => ({
   recordVote(assetCode: string, issuer: string, target: string, adminKey: string): number {
     const key = `${assetCode}:${issuer}:${target}`;
-    const row = _store.get(key) ?? { assetCode, issuer, target, voters: [], createdAt: Math.floor(Date.now() / 1000) };
+    const row = _store.get(key) ?? {
+      assetCode,
+      issuer,
+      target,
+      voters: [],
+      createdAt: Math.floor(Date.now() / 1000),
+    };
     if (!row.voters.includes(adminKey)) row.voters.push(adminKey);
     _store.set(key, row);
     return row.voters.length;
@@ -64,11 +76,11 @@ import StellarSdk from "@stellar/stellar-sdk";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 const ASSET_CODE = "RWAUSD";
-const ISSUER  = "GBY6UXJLKZH6PWYLEH2IB5NBGUK5FEUX5X6LHAZ467FBIRTZ3TDKQINV";
-const TARGET  = "GDORQIPV3HMI7GJR24ZYJ6DRRQJETSU5CBUODOC7DMQWEZJ5AXNKME57";
-const ADMIN1  = "GDHPFE3HWV6V7VO3X3IVTEYB7Y2U75NKNXMGXDC2KCN2XW2JT5X6ELXH";
-const ADMIN2  = "GAL6QJCUL3WULYYN6EU4K4KJZOTZ2LUKHEA7YMG5RUCAT65L7RJOSZGH";
-const ADMIN3  = "GBY6UXJLKZH6PWYLEH2IB5NBGUK5FEUX5X6LHAZ467FBIRTZ3TDKQINV";
+const ISSUER = "GBY6UXJLKZH6PWYLEH2IB5NBGUK5FEUX5X6LHAZ467FBIRTZ3TDKQINV";
+const TARGET = "GDORQIPV3HMI7GJR24ZYJ6DRRQJETSU5CBUODOC7DMQWEZJ5AXNKME57";
+const ADMIN1 = "GDHPFE3HWV6V7VO3X3IVTEYB7Y2U75NKNXMGXDC2KCN2XW2JT5X6ELXH";
+const ADMIN2 = "GAL6QJCUL3WULYYN6EU4K4KJZOTZ2LUKHEA7YMG5RUCAT65L7RJOSZGH";
+const ADMIN3 = "GBY6UXJLKZH6PWYLEH2IB5NBGUK5FEUX5X6LHAZ467FBIRTZ3TDKQINV";
 const CONTRACT_ID = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM";
 
 function buildFakeTx(adminKey: string): string {
@@ -107,7 +119,10 @@ describe("Vote flow integration", () => {
     // it defaults to '' (not set before module load), so it returns 503.
     // The XDR-building logic is exercised via buildFakeTx in the submit tests.
     const res = await request(app).post("/api/freeze/build").send({
-      assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET, adminKey: ADMIN1,
+      assetCode: ASSET_CODE,
+      issuer: ISSUER,
+      target: TARGET,
+      adminKey: ADMIN1,
     });
     expect(res.status).toBe(503);
     expect(res.body.error).toMatch(/ContractNotFound/);
@@ -115,18 +130,28 @@ describe("Vote flow integration", () => {
 
   it("votes 1 and 2 return vote_recorded with correct counts", async () => {
     mockGetOnChainVotes.mockResolvedValue(1);
-    const r1 = await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN1), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    const r1 = await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN1),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
     expect(r1.status).toBe(200);
     expect(r1.body.status).toBe("vote_recorded");
     expect(r1.body.votes).toBe(1);
 
     mockLoadAccount.mockResolvedValue(new StellarSdk.Account(ADMIN2, "100"));
     mockGetOnChainVotes.mockResolvedValue(2);
-    const r2 = await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN2), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    const r2 = await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN2),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
     expect(r2.status).toBe(200);
     expect(r2.body.status).toBe("vote_recorded");
     expect(r2.body.votes).toBe(2);
@@ -135,21 +160,36 @@ describe("Vote flow integration", () => {
   it("3rd vote reaches quorum — returns executed with votes=3", async () => {
     // Seed two prior votes
     mockGetOnChainVotes.mockResolvedValue(1);
-    await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN1), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN1),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
     mockLoadAccount.mockResolvedValue(new StellarSdk.Account(ADMIN2, "100"));
     mockGetOnChainVotes.mockResolvedValue(2);
-    await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN2), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN2),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
 
     // 3rd vote — on-chain returns 0 (quorum reached, contract cleared proposal)
     mockLoadAccount.mockResolvedValue(new StellarSdk.Account(ADMIN3, "100"));
     mockGetOnChainVotes.mockResolvedValue(0);
-    const r3 = await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN3), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    const r3 = await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN3),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
 
     expect(r3.status).toBe(200);
     expect(r3.body.status).toBe("executed");
@@ -159,9 +199,14 @@ describe("Vote flow integration", () => {
 
   it("GET /api/freeze/proposals reflects audit log after a vote", async () => {
     mockGetOnChainVotes.mockResolvedValue(1);
-    await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN1), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN1),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
 
     const res = await request(app).get("/api/freeze/proposals");
     expect(res.status).toBe(200);
@@ -174,9 +219,14 @@ describe("Vote flow integration", () => {
     mockSubmitTransaction.mockRejectedValue({
       response: { data: { extras: { result_codes: { transaction: "tx_bad_auth" } } } },
     });
-    const res = await request(app).post("/api/freeze/submit").send({
-      signedXdr: buildFakeTx(ADMIN1), assetCode: ASSET_CODE, issuer: ISSUER, target: TARGET,
-    });
+    const res = await request(app)
+      .post("/api/freeze/submit")
+      .send({
+        signedXdr: buildFakeTx(ADMIN1),
+        assetCode: ASSET_CODE,
+        issuer: ISSUER,
+        target: TARGET,
+      });
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("UnauthorizedFreezeAttempt");
   });

@@ -1,5 +1,11 @@
 import * as StellarSdk from "@stellar/stellar-sdk";
-import { registerWebhook, listWebhooks, deleteWebhook, signWebhookPayload, verifyWebhookSignature } from "../src/services/webhookService";
+import {
+  registerWebhook,
+  listWebhooks,
+  deleteWebhook,
+  signWebhookPayload,
+  verifyWebhookSignature,
+} from "../src/services/webhookService";
 import { getActiveNetwork, switchNetwork, getAllNetworks } from "../src/services/networkManager";
 import { TtlCache } from "../src/services/cache";
 import { computeTransferAnalytics } from "../src/services/analytics";
@@ -83,8 +89,22 @@ describe("Advanced Backend Services Integration Suite", () => {
   describe("Analytics Aggregator (analytics.ts)", () => {
     it("should aggregate transfer volume, calculate averages, and sort top participants", () => {
       const sampleTransfers = [
-        { id: "1", from: "G_SENDER_1", to: "G_REC_1", amount: 100, asset: "USDC", ts: "2026-01-01" },
-        { id: "2", from: "G_SENDER_1", to: "G_REC_2", amount: 200, asset: "USDC", ts: "2026-01-01" },
+        {
+          id: "1",
+          from: "G_SENDER_1",
+          to: "G_REC_1",
+          amount: 100,
+          asset: "USDC",
+          ts: "2026-01-01",
+        },
+        {
+          id: "2",
+          from: "G_SENDER_1",
+          to: "G_REC_2",
+          amount: 200,
+          asset: "USDC",
+          ts: "2026-01-01",
+        },
         { id: "3", from: "G_SENDER_2", to: "G_REC_1", amount: 50, asset: "EURC", ts: "2026-01-01" },
       ];
 
@@ -142,4 +162,3 @@ describe("Advanced Backend Services Integration Suite", () => {
     });
   });
 });
-

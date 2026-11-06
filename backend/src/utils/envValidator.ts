@@ -49,16 +49,22 @@ export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): EnvVa
     if (contractId.startsWith("C") && contractId.length === 56) {
       checkedKeys["FREEZE_CONTRACT_ID"] = contractId;
     } else {
-      warnings.push(`FREEZE_CONTRACT_ID should be a 56-character Soroban contract address starting with 'C', received: '${contractId}'`);
+      warnings.push(
+        `FREEZE_CONTRACT_ID should be a 56-character Soroban contract address starting with 'C', received: '${contractId}'`
+      );
     }
   } else {
-    warnings.push("FREEZE_CONTRACT_ID is not configured. Smart contract queries will run in mock mode.");
+    warnings.push(
+      "FREEZE_CONTRACT_ID is not configured. Smart contract queries will run in mock mode."
+    );
   }
 
   // 5. JWT Secret
   const jwtSecret = env.JWT_SECRET;
   if (jwtSecret && jwtSecret.length < 32) {
-    warnings.push("JWT_SECRET is shorter than 32 characters; recommend at least 256-bit entropy in production.");
+    warnings.push(
+      "JWT_SECRET is shorter than 32 characters; recommend at least 256-bit entropy in production."
+    );
   }
 
   // 6. Allowed Origin
@@ -100,4 +106,3 @@ if (require.main === module) {
     process.exit(0);
   }
 }
-

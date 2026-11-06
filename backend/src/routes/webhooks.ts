@@ -1,5 +1,11 @@
 import { Router, Request, Response } from "express";
-import { registerWebhook, listWebhooks, deleteWebhook, rotateWebhookSecret } from "../services/webhookService";
+import {
+  registerWebhook,
+  listWebhooks,
+  deleteWebhook,
+  rotateWebhookSecret,
+} from "../services/webhookService";
+import { isSafeWebhookUrl } from "../utils/ssrfValidator";
 
 export const webhooksRouter = Router();
 
@@ -20,14 +26,9 @@ webhooksRouter.post("/", (req: Request, res: Response) => {
     return;
   }
 
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      res.status(400).json({ error: "Webhook URL must use http or https protocol" });
-      return;
-    }
-  } catch {
-    res.status(400).json({ error: "Invalid webhook URL format" });
+  const check = isSafeWebhookUrl(url);
+  if (!check.valid) {
+    res.status(400).json({ error: check.reason ?? "Invalid webhook URL destination" });
     return;
   }
 

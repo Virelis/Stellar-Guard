@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { listWebhooks, signWebhookPayload, WebhookSubscription } from "./webhookService";
 import { logger } from "./logger";
 import { eventBus, GovernanceEvent } from "./eventBus";
+import { isSafeWebhookUrl } from "../utils/ssrfValidator";
 
 export interface DeliveryAttempt {
   id: string;
@@ -31,6 +32,14 @@ export async function dispatchToWebhook(
   event: GovernanceEvent,
   maxRetries = 3
 ): Promise<boolean> {
+  const urlCheck = isSafeWebhookUrl(hook.url);
+  if (!urlCheck.valid) {
+    logger.warn(
+      `[WebhookDispatcher] Blocked SSRF attempt for webhook #${hook.id} (${hook.url}): ${urlCheck.reason}`
+    );
+    return false;
+  }
+
   const deliveryId = crypto.randomUUID();
   const payloadStr = JSON.stringify(event);
   const signature = signWebhookPayload(payloadStr, hook.secret);

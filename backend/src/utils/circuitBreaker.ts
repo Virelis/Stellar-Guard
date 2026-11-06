@@ -78,4 +78,3 @@ export class CircuitBreaker {
     this.state = "CLOSED";
   }
 }
-

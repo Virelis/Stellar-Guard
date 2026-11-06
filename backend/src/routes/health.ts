@@ -47,7 +47,11 @@ healthRouter.get("/metrics", (_req: Request, res: Response) => {
   res.send(metrics.getMetricsAsText());
 });
 
-function checkDatabaseHealth(): { status: "ok" | "error"; migrationVersion?: number; error?: string } {
+function checkDatabaseHealth(): {
+  status: "ok" | "error";
+  migrationVersion?: number;
+  error?: string;
+} {
   try {
     const db = getDb();
     const row = db.prepare("SELECT 1 as alive").get() as { alive: number };

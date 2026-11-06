@@ -83,17 +83,27 @@ class FilterRegistry {
       }
 
       // Asset code check
-      if (rule.assetCode && event.assetCode && rule.assetCode.toUpperCase() !== event.assetCode.toUpperCase()) {
+      if (
+        rule.assetCode &&
+        event.assetCode &&
+        rule.assetCode.toUpperCase() !== event.assetCode.toUpperCase()
+      ) {
         continue;
       }
 
       // Amount threshold
-      if (rule.minAmount !== undefined && (event.amount === undefined || event.amount < rule.minAmount)) {
+      if (
+        rule.minAmount !== undefined &&
+        (event.amount === undefined || event.amount < rule.minAmount)
+      ) {
         continue;
       }
 
       // Risk score threshold
-      if (rule.minRiskScore !== undefined && (event.riskScore === undefined || event.riskScore < rule.minRiskScore)) {
+      if (
+        rule.minRiskScore !== undefined &&
+        (event.riskScore === undefined || event.riskScore < rule.minRiskScore)
+      ) {
         continue;
       }
 

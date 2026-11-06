@@ -18,7 +18,9 @@ export function runDatabaseMaintenance(performVacuum: boolean = false): Database
 
   try {
     // 1. Check integrity
-    const integrityRows = db.prepare("PRAGMA integrity_check").all() as Array<{ integrity_check: string }>;
+    const integrityRows = db.prepare("PRAGMA integrity_check").all() as Array<{
+      integrity_check: string;
+    }>;
     const integrity = integrityRows.map((r) => r.integrity_check);
     const isIntegrityOk = integrity.length === 1 && integrity[0] === "ok";
 
@@ -26,7 +28,8 @@ export function runDatabaseMaintenance(performVacuum: boolean = false): Database
     const fkRows = db.prepare("PRAGMA foreign_key_check").all();
 
     // 3. Page calculations
-    const pageCountRow = db.prepare("PRAGMA page_count").get() as { page_count: number } | undefined;
+    const pageCountRow = db.prepare("PRAGMA page_count").get() as
+      { page_count: number } | undefined;
     const pageSizeRow = db.prepare("PRAGMA page_size").get() as { page_size: number } | undefined;
     const pageCount = pageCountRow?.page_count ?? 0;
     const pageSize = pageSizeRow?.page_size ?? 4096;

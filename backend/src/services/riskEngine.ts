@@ -65,9 +65,7 @@ export function evaluateAccountRisk(targetAddress: string): RiskAssessment {
   }
 
   // 4. Structuring pattern: multiple transfers in 9,000 - 9,999 range (common AML avoidance)
-  const structuringTransfers = accountTransfers.filter(
-    (t) => t.amount >= 9000 && t.amount < 10000
-  );
+  const structuringTransfers = accountTransfers.filter((t) => t.amount >= 9000 && t.amount < 10000);
   if (structuringTransfers.length >= 2) {
     factors.push({
       code: "POTENTIAL_STRUCTURING",

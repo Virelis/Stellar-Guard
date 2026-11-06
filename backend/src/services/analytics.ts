@@ -46,20 +46,30 @@ export function computeTransferAnalytics(transfers: Transfer[]): AnalyticsReport
     senderMap.set(t.from, sendEntry);
   }
 
-  const volumeByAsset: AssetVolumeSummary[] = Array.from(assetMap.entries()).map(([asset, data]) => ({
-    asset,
-    totalVolume: parseFloat(data.total.toFixed(7)),
-    transferCount: data.count,
-    averageAmount: parseFloat((data.total / (data.count || 1)).toFixed(7)),
-  }));
+  const volumeByAsset: AssetVolumeSummary[] = Array.from(assetMap.entries()).map(
+    ([asset, data]) => ({
+      asset,
+      totalVolume: parseFloat(data.total.toFixed(7)),
+      transferCount: data.count,
+      averageAmount: parseFloat((data.total / (data.count || 1)).toFixed(7)),
+    })
+  );
 
   const topRecipients: AccountActivitySummary[] = Array.from(recipientMap.entries())
-    .map(([address, data]) => ({ address, totalAmount: parseFloat(data.total.toFixed(7)), count: data.count }))
+    .map(([address, data]) => ({
+      address,
+      totalAmount: parseFloat(data.total.toFixed(7)),
+      count: data.count,
+    }))
     .sort((a, b) => b.totalAmount - a.totalAmount)
     .slice(0, 10);
 
   const topSenders: AccountActivitySummary[] = Array.from(senderMap.entries())
-    .map(([address, data]) => ({ address, totalAmount: parseFloat(data.total.toFixed(7)), count: data.count }))
+    .map(([address, data]) => ({
+      address,
+      totalAmount: parseFloat(data.total.toFixed(7)),
+      count: data.count,
+    }))
     .sort((a, b) => b.totalAmount - a.totalAmount)
     .slice(0, 10);
 

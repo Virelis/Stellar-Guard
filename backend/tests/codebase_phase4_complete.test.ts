@@ -5,7 +5,11 @@ import { calculateRequiredQuorum, StellarGuardClient } from "../../packages/type
 
 describe("Batch 12 & Phase 4 Codebase Infrastructure Verification", () => {
   test("CircuitBreaker trips to OPEN after threshold failures and rejects execution", async () => {
-    const cb = new CircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 1000, callTimeoutMs: 200 });
+    const cb = new CircuitBreaker({
+      failureThreshold: 3,
+      resetTimeoutMs: 1000,
+      callTimeoutMs: 200,
+    });
     expect(cb.getState()).toBe("CLOSED");
 
     const failingCall = async () => {
@@ -26,12 +30,16 @@ describe("Batch 12 & Phase 4 Codebase Infrastructure Verification", () => {
 
   test("Input sanitizer neutralizes XSS characters and validates incident URIs", () => {
     const dirtyHtml = '<script>alert("hack")</script>';
-    expect(sanitizeHtml(dirtyHtml)).toBe("&lt;script&gt;alert(&quot;hack&quot;)&lt;&#x2F;script&gt;");
+    expect(sanitizeHtml(dirtyHtml)).toBe(
+      "&lt;script&gt;alert(&quot;hack&quot;)&lt;&#x2F;script&gt;"
+    );
 
     const dirtyMemo = "Normal text\x00\x08with control characters";
     expect(sanitizeMemoText(dirtyMemo)).toBe("Normal textwith control characters");
 
-    expect(isValidIncidentUri("ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi")).toBe(true);
+    expect(
+      isValidIncidentUri("ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi")
+    ).toBe(true);
     expect(isValidIncidentUri("https://compliance.institution.com/reports/101")).toBe(true);
     expect(isValidIncidentUri("javascript:alert(1)")).toBe(false);
   });

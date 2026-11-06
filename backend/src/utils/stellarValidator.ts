@@ -33,20 +33,38 @@ export function validateFreezeRequest(payload: {
   issuer?: unknown;
   target?: unknown;
 }): { valid: boolean; error?: string } {
-  if (!payload.assetCode || typeof payload.assetCode !== "string" || !isValidAssetCode(payload.assetCode)) {
-    return { valid: false, error: "Invalid asset code (must be 1-12 alphanumeric characters or XLM)" };
+  if (
+    !payload.assetCode ||
+    typeof payload.assetCode !== "string" ||
+    !isValidAssetCode(payload.assetCode)
+  ) {
+    return {
+      valid: false,
+      error: "Invalid asset code (must be 1-12 alphanumeric characters or XLM)",
+    };
   }
 
-  if (!payload.issuer || typeof payload.issuer !== "string" || !isValidStellarAddress(payload.issuer)) {
+  if (
+    !payload.issuer ||
+    typeof payload.issuer !== "string" ||
+    !isValidStellarAddress(payload.issuer)
+  ) {
     return { valid: false, error: "Invalid issuer address format" };
   }
 
-  if (!payload.target || typeof payload.target !== "string" || !isValidStellarAddress(payload.target)) {
+  if (
+    !payload.target ||
+    typeof payload.target !== "string" ||
+    !isValidStellarAddress(payload.target)
+  ) {
     return { valid: false, error: "Invalid target address format" };
   }
 
   if (payload.target === payload.issuer) {
-    return { valid: false, error: "Target address cannot be identical to issuer account (self-freeze prohibited)" };
+    return {
+      valid: false,
+      error: "Target address cannot be identical to issuer account (self-freeze prohibited)",
+    };
   }
 
   return { valid: true };

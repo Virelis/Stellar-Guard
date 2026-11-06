@@ -52,7 +52,9 @@ export function getActiveNetwork(): StellarNetworkConfig {
 export function switchNetwork(networkName: string): StellarNetworkConfig {
   const target = networkName.toLowerCase();
   if (!NETWORKS[target]) {
-    throw new Error(`Unsupported network: '${networkName}'. Supported: ${Object.keys(NETWORKS).join(", ")}`);
+    throw new Error(
+      `Unsupported network: '${networkName}'. Supported: ${Object.keys(NETWORKS).join(", ")}`
+    );
   }
   currentNetworkName = target;
   return NETWORKS[currentNetworkName];

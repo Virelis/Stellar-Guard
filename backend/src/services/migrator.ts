@@ -72,7 +72,9 @@ export function runMigrations(db: DatabaseSync): number {
     );
   `);
 
-  const appliedRows = db.prepare(`SELECT version FROM schema_migrations`).all() as { version: number }[];
+  const appliedRows = db.prepare(`SELECT version FROM schema_migrations`).all() as {
+    version: number;
+  }[];
   const appliedSet = new Set(appliedRows.map((r) => r.version));
 
   let appliedCount = 0;
@@ -91,6 +93,8 @@ export function runMigrations(db: DatabaseSync): number {
 }
 
 export function getMigrationVersion(db: DatabaseSync): number {
-  const row = db.prepare(`SELECT MAX(version) as max_v FROM schema_migrations`).get() as { max_v: number | null };
+  const row = db.prepare(`SELECT MAX(version) as max_v FROM schema_migrations`).get() as {
+    max_v: number | null;
+  };
   return row?.max_v ?? 0;
 }

@@ -54,7 +54,9 @@ export function startMockStellarServer(port = 0): Promise<MockServerInstance> {
             const parsed = JSON.parse(body);
             if (parsed.method === "getLatestLedger") {
               res.writeHead(200);
-              res.end(JSON.stringify({ jsonrpc: "2.0", id: parsed.id ?? 1, result: { sequence: 543210 } }));
+              res.end(
+                JSON.stringify({ jsonrpc: "2.0", id: parsed.id ?? 1, result: { sequence: 543210 } })
+              );
               return;
             }
             if (parsed.method === "simulateTransaction") {

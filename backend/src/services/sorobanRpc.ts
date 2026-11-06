@@ -3,8 +3,7 @@ import { logger } from "./logger";
 
 const RPC_URL = process.env.SOROBAN_RPC_URL ?? "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = process.env.FREEZE_CONTRACT_ID ?? "";
-const NETWORK_PASSPHRASE =
-  process.env.NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
+const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
 
 // Short-TTL simulation cache to prevent redundant RPC roundtrips
 interface CacheEntry<T> {
@@ -53,10 +52,7 @@ export async function checkSorobanRpcHealth(): Promise<{
 /**
  * Query on-chain vote count for a proposal via Soroban RPC simulateTransaction.
  */
-export async function getOnChainVotes(
-  assetCode: string,
-  target: string
-): Promise<number | null> {
+export async function getOnChainVotes(assetCode: string, target: string): Promise<number | null> {
   if (!CONTRACT_ID) return null;
   const cacheKey = `votes:${assetCode}:${target}`;
   const cached = getFromCache<number>(cacheKey);
@@ -97,10 +93,7 @@ export async function getOnChainVotes(
     );
 
     if (data?.result?.results?.[0]?.xdr) {
-      const scVal = StellarSdk.xdr.ScVal.fromXDR(
-        data.result.results[0].xdr,
-        "base64"
-      );
+      const scVal = StellarSdk.xdr.ScVal.fromXDR(data.result.results[0].xdr, "base64");
       const val = StellarSdk.scValToNative(scVal) as number;
       setInCache(cacheKey, val);
       return val;
@@ -158,10 +151,7 @@ export async function isAccountFrozenOnChain(
     );
 
     if (data?.result?.results?.[0]?.xdr) {
-      const scVal = StellarSdk.xdr.ScVal.fromXDR(
-        data.result.results[0].xdr,
-        "base64"
-      );
+      const scVal = StellarSdk.xdr.ScVal.fromXDR(data.result.results[0].xdr, "base64");
       const isFrozen = Boolean(StellarSdk.scValToNative(scVal));
       setInCache(cacheKey, isFrozen);
       return isFrozen;

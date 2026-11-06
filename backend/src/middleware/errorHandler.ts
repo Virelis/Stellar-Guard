@@ -29,11 +29,15 @@ export function errorHandler(
     errorName = `StellarTxError_${txCode}`;
   }
 
-  logger.error(`[ErrorHandler] ${req.method} ${req.path} - ${statusCode} ${errorName}: ${message}`, err, {
-    path: req.path,
-    method: req.method,
-    statusCode,
-  });
+  logger.error(
+    `[ErrorHandler] ${req.method} ${req.path} - ${statusCode} ${errorName}: ${message}`,
+    err,
+    {
+      path: req.path,
+      method: req.method,
+      statusCode,
+    }
+  );
 
   const responseBody: Record<string, unknown> = {
     success: false,

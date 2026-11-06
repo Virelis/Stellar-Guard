@@ -15,7 +15,11 @@ export function signWebhookPayload(payload: string, secret: string): string {
   return `sha256=${hmac}`;
 }
 
-export function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+export function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
   if (!signature || !signature.startsWith("sha256=")) return false;
   const expected = signWebhookPayload(payload, secret);
   try {
@@ -25,9 +29,14 @@ export function verifyWebhookSignature(payload: string, signature: string, secre
   }
 }
 
-export function registerWebhook(url: string, eventFilter = "*", secret?: string): WebhookSubscription {
+export function registerWebhook(
+  url: string,
+  eventFilter = "*",
+  secret?: string
+): WebhookSubscription {
   const db = getDb();
-  const autoSecret = secret && secret.length >= 16 ? secret : crypto.randomBytes(24).toString("hex");
+  const autoSecret =
+    secret && secret.length >= 16 ? secret : crypto.randomBytes(24).toString("hex");
 
   const stmt = db.prepare(`
     INSERT INTO webhooks (url, event_filter, secret, is_active)
@@ -49,7 +58,9 @@ export function registerWebhook(url: string, eventFilter = "*", secret?: string)
 
 export function listWebhooks(): WebhookSubscription[] {
   const db = getDb();
-  const rows = db.prepare(`SELECT * FROM webhooks WHERE is_active = 1 ORDER BY created_at DESC`).all() as any[];
+  const rows = db
+    .prepare(`SELECT * FROM webhooks WHERE is_active = 1 ORDER BY created_at DESC`)
+    .all() as any[];
   return rows.map((r) => ({
     id: r.id,
     url: r.url,
@@ -66,14 +77,20 @@ export function deleteWebhook(id: number): boolean {
   return Number(result.changes) > 0;
 }
 
-
-export function rotateWebhookSecret(id: number, customSecret?: string): { id: number; oldSecret: string; newSecret: string } | null {
+export function rotateWebhookSecret(
+  id: number,
+  customSecret?: string
+): { id: number; oldSecret: string; newSecret: string } | null {
   const db = getDb();
-  const existing = db.prepare(`SELECT secret FROM webhooks WHERE id = ?`).get(id) as { secret: string } | undefined;
+  const existing = db.prepare(`SELECT secret FROM webhooks WHERE id = ?`).get(id) as
+    { secret: string } | undefined;
   if (!existing) return null;
 
   const oldSecret = existing.secret;
-  const newSecret = customSecret && customSecret.length >= 16 ? customSecret : crypto.randomBytes(24).toString("hex");
+  const newSecret =
+    customSecret && customSecret.length >= 16
+      ? customSecret
+      : crypto.randomBytes(24).toString("hex");
 
   db.prepare(`UPDATE webhooks SET secret = ? WHERE id = ?`).run(newSecret, id);
   return { id, oldSecret, newSecret };

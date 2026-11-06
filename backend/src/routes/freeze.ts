@@ -14,7 +14,12 @@ const server = new StellarSdk.Horizon.Server(HORIZON_URL);
 const QUORUM = 3;
 
 function isValidAddress(addr: string): boolean {
-  try { StellarSdk.StrKey.decodeEd25519PublicKey(addr); return true; } catch { return false; }
+  try {
+    StellarSdk.StrKey.decodeEd25519PublicKey(addr);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isValidAssetCode(code: string): boolean {
@@ -146,7 +151,9 @@ freezeRouter.post("/submit", async (req: Request, res: Response) => {
 
     // Send FCM push notification on the first vote for a new proposal
     if (auditCount === 1) {
-      sendFreezeProposalNotification(assetCode, target).catch(() => {/* non-fatal */});
+      sendFreezeProposalNotification(assetCode, target).catch(() => {
+        /* non-fatal */
+      });
     }
 
     // Read authoritative vote count from chain
@@ -161,7 +168,10 @@ freezeRouter.post("/submit", async (req: Request, res: Response) => {
 
     return res.json({ status: "vote_recorded", votes, quorum: QUORUM, hash: result.hash });
   } catch (err) {
-    const e = err as { response?: { data?: { extras?: { result_codes?: { transaction?: string } } } }; message?: string };
+    const e = err as {
+      response?: { data?: { extras?: { result_codes?: { transaction?: string } } } };
+      message?: string;
+    };
     if (e.response?.data?.extras?.result_codes?.transaction === "tx_bad_auth")
       return res.status(403).json({ error: "UnauthorizedFreezeAttempt" });
     return res.status(500).json({ error: e.message });

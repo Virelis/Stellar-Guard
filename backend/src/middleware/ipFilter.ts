@@ -38,7 +38,9 @@ export function ipFilterMiddleware(req: Request, res: Response, next: NextFuncti
   const clientIp = (req.ip || req.socket.remoteAddress || "").replace(/^::ffff:/, "");
 
   if (clientIp && isIpBlocked(clientIp)) {
-    logger.warn(`[IPFilter] Rejected request from sanctioned/blocked IP: ${clientIp} (${req.method} ${req.path})`);
+    logger.warn(
+      `[IPFilter] Rejected request from sanctioned/blocked IP: ${clientIp} (${req.method} ${req.path})`
+    );
     res.status(403).json({
       error: "Forbidden",
       message: "Access from this network address is restricted under compliance policy",

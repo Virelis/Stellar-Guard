@@ -31,6 +31,8 @@ import { scheduler } from "./services/scheduler";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(corsMiddleware);
 
 app.use(securityHeadersMiddleware);

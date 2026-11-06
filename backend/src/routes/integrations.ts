@@ -1,5 +1,9 @@
 import { Router, Request, Response } from "express";
-import { formatDiscordAlert, formatSlackAlert, AlertNotificationData } from "../services/notificationTemplates";
+import {
+  formatDiscordAlert,
+  formatSlackAlert,
+  AlertNotificationData,
+} from "../services/notificationTemplates";
 import { logger } from "../services/logger";
 
 export const integrationsRouter = Router();
@@ -8,7 +12,9 @@ export const integrationsRouter = Router();
 integrationsRouter.post("/discord/format", (req: Request, res: Response) => {
   const data = req.body as AlertNotificationData;
   if (!data.assetCode || !data.targetAddress || !data.eventType) {
-    return res.status(400).json({ error: "Missing required fields: assetCode, targetAddress, eventType" });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields: assetCode, targetAddress, eventType" });
   }
 
   const payload = formatDiscordAlert(data);
@@ -19,7 +25,9 @@ integrationsRouter.post("/discord/format", (req: Request, res: Response) => {
 integrationsRouter.post("/slack/format", (req: Request, res: Response) => {
   const data = req.body as AlertNotificationData;
   if (!data.assetCode || !data.targetAddress || !data.eventType) {
-    return res.status(400).json({ error: "Missing required fields: assetCode, targetAddress, eventType" });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields: assetCode, targetAddress, eventType" });
   }
 
   const payload = formatSlackAlert(data);
@@ -64,7 +72,10 @@ integrationsRouter.post("/dispatch", async (req: Request, res: Response) => {
       provider,
     });
   } catch (err: any) {
-    logger.error("Failed to dispatch external integration alert", { provider, error: err?.message });
+    logger.error("Failed to dispatch external integration alert", {
+      provider,
+      error: err?.message,
+    });
     return res.status(502).json({
       success: false,
       error: "DispatchFailed",

@@ -1,7 +1,11 @@
 import { Router, Request, Response } from "express";
 import { createDatabaseBackup, listDatabaseBackups, pruneOldBackups } from "../services/backup";
+import { authMiddleware, requireRole } from "../middleware/auth";
 
 export const backupRouter = Router();
+
+backupRouter.use(authMiddleware);
+backupRouter.use(requireRole("admin"));
 
 backupRouter.get("/", (_req: Request, res: Response) => {
   const backups = listDatabaseBackups();

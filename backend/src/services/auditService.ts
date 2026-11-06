@@ -58,7 +58,9 @@ export function queryAuditLogs(options: {
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  const countRow = db.prepare(`SELECT COUNT(*) as total FROM audit_logs ${whereClause}`).get(...params) as {
+  const countRow = db
+    .prepare(`SELECT COUNT(*) as total FROM audit_logs ${whereClause}`)
+    .get(...params) as {
     total: number;
   };
   const total = countRow?.total ?? 0;

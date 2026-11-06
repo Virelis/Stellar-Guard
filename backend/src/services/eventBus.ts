@@ -2,7 +2,13 @@ import { EventEmitter } from "events";
 import { Response } from "express";
 
 export interface GovernanceEvent {
-  type: "PROPOSAL_CREATED" | "VOTE_CAST" | "FREEZE_EXECUTED" | "UNFREEZE_EXECUTED" | "PROPOSAL_CANCELLED" | "HEARTBEAT";
+  type:
+    | "PROPOSAL_CREATED"
+    | "VOTE_CAST"
+    | "FREEZE_EXECUTED"
+    | "UNFREEZE_EXECUTED"
+    | "PROPOSAL_CANCELLED"
+    | "HEARTBEAT";
   timestamp: string;
   data: Record<string, unknown>;
 }
@@ -25,7 +31,10 @@ class EventBus extends EventEmitter {
     const initialEvent: GovernanceEvent = {
       type: "HEARTBEAT",
       timestamp: new Date().toISOString(),
-      data: { message: "Connected to Stellar-Guard SSE event stream", activeClients: this.clients.size },
+      data: {
+        message: "Connected to Stellar-Guard SSE event stream",
+        activeClients: this.clients.size,
+      },
     };
     res.write(`data: ${JSON.stringify(initialEvent)}\n\n`);
   }

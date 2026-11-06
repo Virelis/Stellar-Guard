@@ -2,14 +2,30 @@ import * as StellarSdk from "@stellar/stellar-sdk";
 import crypto from "crypto";
 import { logger } from "./logger";
 
-const SERVER_SIGNING_KEY =
-  process.env.SERVER_SIGNING_KEY ??
-  "SDN4D6H77KAZQ76S67VCEEQT6RFE3W7E4K2E2X3UG3J4KYYXUGZNYU6H"; // default dev secret seed
+const DEV_SIGNING_KEY = "SDN4D6H77KAZQ76S67VCEEQT6RFE3W7E4K2E2X3UG3J4KYYXUGZNYU6H";
+const SERVER_SIGNING_KEY = process.env.SERVER_SIGNING_KEY ?? DEV_SIGNING_KEY;
 const HOME_DOMAIN = process.env.HOME_DOMAIN ?? "stellar-guard.local";
-const NETWORK_PASSPHRASE =
-  process.env.NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
+const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
+
+if (
+  process.env.NODE_ENV === "production" &&
+  (!process.env.SERVER_SIGNING_KEY || process.env.SERVER_SIGNING_KEY === DEV_SIGNING_KEY)
+) {
+  throw new Error(
+    "FATAL: SERVER_SIGNING_KEY must be configured with a secure production secret key in production"
+  );
+}
 
 let serverKeypair: StellarSdk.Keypair;
+const consumedChallengeHashes = new Map<string, number>();
+
+function pruneExpiredChallenges(now: number): void {
+  for (const [hash, expiresAt] of consumedChallengeHashes.entries()) {
+    if (expiresAt < now) {
+      consumedChallengeHashes.delete(hash);
+    }
+  }
+}
 
 function getServerKeypair(): StellarSdk.Keypair {
   if (!serverKeypair) {
@@ -46,8 +62,8 @@ export function buildChallengeTx(
   // Nonce data value for replay attack prevention
   const nonce = crypto.randomBytes(32).toString("hex");
 
-  // Build account with sequence 0 as per SEP-0010 specification
-  const sourceAccount = new StellarSdk.Account(server.publicKey(), "0");
+  // Build account so sequence number is 0 as per SEP-0010 specification
+  const sourceAccount = new StellarSdk.Account(server.publicKey(), "-1");
 
   const txBuilder = new StellarSdk.TransactionBuilder(sourceAccount, {
     fee: "100",
@@ -98,14 +114,18 @@ export function verifyChallengeTx(signedXdr: string): {
       return { valid: false, error: "Invalid transaction source account" };
     }
 
-    // 2. Sequence must be 0
-    if (tx.sequence !== "0") {
-      return { valid: false, error: "Challenge sequence must be 0" };
+    // 2. Sequence must be 0 (or 1 depending on sdk build increment)
+    if (tx.sequence !== "0" && tx.sequence !== "1") {
+      return { valid: false, error: "Challenge sequence must be 0 or 1" };
     }
 
     // 3. Time bounds check
     const now = Math.floor(Date.now() / 1000);
-    if (!tx.timeBounds || now < parseInt(tx.timeBounds.minTime, 10) || now > parseInt(tx.timeBounds.maxTime, 10)) {
+    if (
+      !tx.timeBounds ||
+      now < parseInt(tx.timeBounds.minTime, 10) ||
+      now > parseInt(tx.timeBounds.maxTime, 10)
+    ) {
       return { valid: false, error: "Challenge transaction has expired" };
     }
 
@@ -119,6 +139,15 @@ export function verifyChallengeTx(signedXdr: string): {
     // 5. Verify client signature
     const clientKeypair = StellarSdk.Keypair.fromPublicKey(clientPublicKey);
     const txHash = tx.hash();
+    const txHashHex = txHash.toString("hex");
+
+    pruneExpiredChallenges(now);
+    if (consumedChallengeHashes.has(txHashHex)) {
+      return {
+        valid: false,
+        error: "Challenge transaction has already been consumed (replay prevented)",
+      };
+    }
 
     let clientSigned = false;
     for (const sig of tx.signatures) {
@@ -132,8 +161,14 @@ export function verifyChallengeTx(signedXdr: string): {
       return { valid: false, error: "Missing valid cryptographic signature from client account" };
     }
 
+    // Mark challenge as consumed for 10 minutes to prevent replay
+    consumedChallengeHashes.set(txHashHex, now + 600);
+
     return { valid: true, clientPublicKey };
   } catch (err: any) {
-    return { valid: false, error: err.message || "Failed to decode or verify challenge transaction" };
+    return {
+      valid: false,
+      error: err.message || "Failed to decode or verify challenge transaction",
+    };
   }
 }

@@ -40,4 +40,3 @@ export async function traceSpan<T>(
     throw err;
   }
 }
-

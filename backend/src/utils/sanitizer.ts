@@ -37,4 +37,3 @@ export function isValidIncidentUri(uri: string): boolean {
     return false;
   }
 }
-

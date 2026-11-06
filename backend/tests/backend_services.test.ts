@@ -2,7 +2,12 @@ import { DatabaseSync } from "node:sqlite";
 import { runMigrations, getMigrationVersion } from "../src/services/migrator";
 import { metrics } from "../src/services/metrics";
 import { signAuthToken, verifyAuthToken } from "../src/middleware/auth";
-import { isValidEd25519PublicKey, isValidContractId, isValidAssetCode, validateFreezeRequest } from "../src/utils/stellarValidator";
+import {
+  isValidEd25519PublicKey,
+  isValidContractId,
+  isValidAssetCode,
+  validateFreezeRequest,
+} from "../src/utils/stellarValidator";
 import { recordAuditLog, queryAuditLogs } from "../src/services/auditService";
 import { eventBus } from "../src/services/eventBus";
 
@@ -56,7 +61,9 @@ describe("Backend Services & Middleware Comprehensive Test Suite", () => {
     it("should validate Soroban contract IDs", () => {
       const validContract = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
       expect(isValidContractId(validContract)).toBe(true);
-      expect(isValidContractId("GDNQHT2ETVXAVWA4SM2NF5OF64TBEBE4DTRVFK45DIFRC746QQPP2R4R")).toBe(false);
+      expect(isValidContractId("GDNQHT2ETVXAVWA4SM2NF5OF64TBEBE4DTRVFK45DIFRC746QQPP2R4R")).toBe(
+        false
+      );
     });
 
     it("should validate asset codes according to Stellar specs", () => {

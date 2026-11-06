@@ -1,6 +1,7 @@
 export interface AlertNotificationData {
   title: string;
-  eventType: "freeze_proposed" | "freeze_executed" | "vote_cast" | "high_risk_detected" | "unfreeze_action";
+  eventType:
+    "freeze_proposed" | "freeze_executed" | "vote_cast" | "high_risk_detected" | "unfreeze_action";
   assetCode: string;
   targetAddress: string;
   initiator?: string;
@@ -33,7 +34,7 @@ export interface SlackPayload {
 const COLOR_MAP: Record<AlertNotificationData["eventType"], number> = {
   freeze_executed: 0xd32f2f, // Red
   freeze_proposed: 0xff9800, // Orange
-  vote_cast: 0x2196f3,       // Blue
+  vote_cast: 0x2196f3, // Blue
   high_risk_detected: 0x9c27b0, // Purple
   unfreeze_action: 0x4caf50, // Green
 };
@@ -44,7 +45,11 @@ export function formatDiscordAlert(data: AlertNotificationData): DiscordPayload 
 
   const fields = [
     { name: "Asset Code", value: `\`${data.assetCode}\``, inline: true },
-    { name: "Target Account", value: `\`${data.targetAddress.slice(0, 8)}...${data.targetAddress.slice(-6)}\``, inline: true },
+    {
+      name: "Target Account",
+      value: `\`${data.targetAddress.slice(0, 8)}...${data.targetAddress.slice(-6)}\``,
+      inline: true,
+    },
   ];
 
   if (data.initiator) {
@@ -97,7 +102,10 @@ export function formatDiscordAlert(data: AlertNotificationData): DiscordPayload 
 export function formatSlackAlert(data: AlertNotificationData): SlackPayload {
   const fields = [
     { type: "mrkdwn", text: `*Asset:*\n\`${data.assetCode}\`` },
-    { type: "mrkdwn", text: `*Target:*\n\`${data.targetAddress.slice(0, 8)}...${data.targetAddress.slice(-6)}\`` },
+    {
+      type: "mrkdwn",
+      text: `*Target:*\n\`${data.targetAddress.slice(0, 8)}...${data.targetAddress.slice(-6)}\``,
+    },
   ];
 
   if (data.initiator) {

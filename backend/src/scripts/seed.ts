@@ -28,7 +28,8 @@ export function seedDemoData(): { proposals: number; auditLogs: number; webhooks
     issuer,
     target: targetSanction,
     adminKey: admin1,
-    details: "OFAC Specially Designated Nationals (SDN) list match identified by Chainalysis oracle",
+    details:
+      "OFAC Specially Designated Nationals (SDN) list match identified by Chainalysis oracle",
   });
 
   recordAuditLog({

@@ -49,7 +49,9 @@ export class MetricsRegistry {
     }
 
     // HTTP Request Duration Summary
-    lines.push("# HELP http_request_duration_ms_avg Average HTTP response duration in milliseconds");
+    lines.push(
+      "# HELP http_request_duration_ms_avg Average HTTP response duration in milliseconds"
+    );
     lines.push("# TYPE http_request_duration_ms_avg gauge");
     for (const [labels, samples] of this.httpRequestDurationMs.entries()) {
       const avg = samples.reduce((a, b) => a + b, 0) / (samples.length || 1);
@@ -71,7 +73,9 @@ export class MetricsRegistry {
     }
 
     // Horizon Stream Errors
-    lines.push("# HELP stellar_horizon_stream_errors_total Total errors encountered streaming Horizon events");
+    lines.push(
+      "# HELP stellar_horizon_stream_errors_total Total errors encountered streaming Horizon events"
+    );
     lines.push("# TYPE stellar_horizon_stream_errors_total counter");
     lines.push(`stellar_horizon_stream_errors_total ${this.horizonStreamErrors}`);
 
