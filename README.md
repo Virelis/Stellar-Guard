@@ -264,35 +264,29 @@ stellar-guard monitor --live
 
 ```
 stellar-guard/
-├── contract/               # Soroban smart contract (Rust)
+├── contracts/              # Soroban smart contract suite (Rust)
+│   └── freeze-governance/  # CAP-0077 multisig freeze governance contract
+│       ├── src/
+│       │   ├── lib.rs      # Contract entrypoints & governance state machine
+│       │   └── cap0077.rs  # CAP-0077 quarantine adapters & events
+│       └── Cargo.toml
+├── frontend/               # Next.js 14 operator UI
 │   ├── src/
-│   │   └── lib.rs          # Contract entrypoints
-│   └── Cargo.toml
-├── dashboard/              # Next.js 14 operator UI
-│   ├── app/
-│   │   ├── page.tsx        # Main dashboard page
-│   │   ├── layout.tsx      # Root layout
-│   │   └── globals.css     # Global styles + animations
-│   └── components/
-│       ├── HeaderNav.tsx   # Glassmorphism header
-│       ├── SidebarNav.tsx  # Collapsible sidebar
-│       └── OverviewMetricCards.tsx
+│   │   ├── app/            # App router pages (dashboard, proposals, audit)
+│   │   └── components/     # UI, metrics, & Freighter wallet integrations
+│   └── package.json
 ├── backend/                # Express API server
-│   ├── routes/
-│   ├── services/           # AML scoring, IPFS, audit
-│   └── db/                 # SQLite schema + migrations
-├── cli/                    # @stellar-guard/cli npm package
-├── docs/
-│   ├── WHITEPAPER.md
-│   ├── ARCHITECTURE.md
-│   ├── THREAT_MODEL.md
-│   ├── CAP_0077_QUARANTINE_SPEC.md
-│   └── screenshots/
-│       ├── dashboard.svg
-│       └── mobile_view.svg
+│   ├── src/
+│   │   ├── routes/         # Governance, audit, auth, & webhook endpoints
+│   │   ├── services/       # IPFS pinning, risk scoring, & audit storage
+│   │   └── db/             # SQLite audit trail & schema
+│   └── package.json
+├── packages/               # Shared monorepo packages
+│   └── types/              # TypeScript definitions & Soroban error mappings
+├── mobile/                 # Flutter mobile operator client
+├── docs/                   # Architecture, threat model, & specifications
 ├── docker-compose.yml
-├── .env.example
-└── README.md
+└── package.json
 ```
 
 ---
@@ -323,29 +317,43 @@ Contributions are welcome! Here's how to get started:
 
 ```bash
 # Fork and clone
-git clone https://github.com/your-org/stellar-guard.git
-cd stellar-guard
+git clone https://github.com/Virelis/Stellar-Guard.git
+cd Stellar-Guard
 
-# Install all dependencies
-npm run install:all
+# Install monorepo dependencies
+npm install
 
-# Run tests
+# Run all test suites
 npm test
 
 # Run linter
 npm run lint
 
-# Build contract (requires Rust + stellar CLI)
-cd contract && cargo build --target wasm32-unknown-unknown --release
+# Build smart contract (requires Rust + wasm32 target)
+cd contracts/freeze-governance && cargo build --target wasm32-unknown-unknown --release
 ```
 
 ### Development Guidelines
 
-- **Smart contract changes** must include unit tests in `contract/src/tests/`
-- **Backend changes** must include integration tests and not break the audit trail schema
-- **UI changes** should preserve the glassmorphism design language and dark-mode-first approach
-- All PRs require at least one approval before merge
+- **Smart contract changes** must include unit tests in `contracts/freeze-governance/src/lib.rs`
+- **Backend changes** must include integration tests and maintain database schema compatibility
+- **Frontend changes** should preserve responsive glassmorphism styles and dark-mode standards
+- All PRs require passing CI workflows before merging
 - Follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages
+
+---
+
+## 🌊 Stellar Drips Wave & Community Contributions
+
+Stellar-Guard participates actively in the **Stellar Drips Wave** ecosystem initiative to reward open-source builders. 
+
+We welcome community contributors across all project domains:
+- **Soroban Smart Contracts**: Quorum formulas, timelock boundaries, and invariant property fuzzing.
+- **Frontend & Web3 UI**: Freighter wallet interactions, proposal countdown timers, and accessibility.
+- **Backend & Indexer**: Horizon event listeners, structured JSON logging, and webhook dispatching.
+- **Mobile Client**: Alert views, biometric signing flows, and push notifications.
+
+To get started, explore active contributor tasks tagged with [`drips-wave`](https://github.com/Virelis/Stellar-Guard/issues?q=is%3Aissue+is%3Aopen+label%3Adrips-wave) in our [GitHub Issues](https://github.com/Virelis/Stellar-Guard/issues). See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ### Branch Strategy
 

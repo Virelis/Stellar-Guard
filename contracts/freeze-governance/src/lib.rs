@@ -4,7 +4,7 @@
 //! At quorum the contract emits a FREEZE or UNFREEZE event.
 
 #![no_std]
-#![allow(clippy::all)]
+#![allow(clippy::too_many_arguments)]
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env,
     String, Vec,
@@ -121,7 +121,7 @@ impl FreezeGovernance {
         if env.storage().instance().has(&ADMINS_KEY) {
             return Err(Error::AlreadyInitialized);
         }
-        if admins.len() == 0 {
+        if admins.is_empty() {
             return Err(Error::InvalidParameter);
         }
         let contract_addr = env.current_contract_address();
@@ -138,7 +138,7 @@ impl FreezeGovernance {
         }
         let q = match quorum {
             Some(val) => {
-                if val == 0 || (admins.len() > 0 && val > admins.len()) {
+                if val == 0 || (!admins.is_empty() && val > admins.len()) {
                     return Err(Error::InvalidQuorum);
                 }
                 val
@@ -146,7 +146,7 @@ impl FreezeGovernance {
             None => {
                 if admins.len() >= 3 {
                     3
-                } else if admins.len() > 0 {
+                } else if !admins.is_empty() {
                     admins.len()
                 } else {
                     DEFAULT_QUORUM
@@ -1242,7 +1242,7 @@ impl FreezeGovernance {
 
         let mut valid_votes = 0u32;
         for i in 0..proposal.votes.len() {
-            if admins.contains(&proposal.votes.get(i).unwrap()) {
+            if admins.contains(proposal.votes.get(i).unwrap()) {
                 valid_votes += 1;
             }
         }
@@ -1469,7 +1469,7 @@ impl FreezeGovernance {
 
         let mut valid_votes = 0u32;
         for i in 0..proposal.votes.len() {
-            if admins.contains(&proposal.votes.get(i).unwrap()) {
+            if admins.contains(proposal.votes.get(i).unwrap()) {
                 valid_votes += 1;
             }
         }
@@ -1772,7 +1772,7 @@ impl FreezeGovernance {
             .get(&proposal_key)
             .ok_or(Error::ProposalNotFound)?;
 
-        if proposal.votes.len() > 0 {
+        if !proposal.votes.is_empty() {
             return Err(Error::InvalidParameter);
         }
 
@@ -1921,7 +1921,7 @@ impl FreezeGovernance {
         if let Some(p) = proposal {
             let mut valid = 0u32;
             for i in 0..p.votes.len() {
-                if admins.contains(&p.votes.get(i).unwrap()) {
+                if admins.contains(p.votes.get(i).unwrap()) {
                     valid += 1;
                 }
             }
@@ -2300,6 +2300,7 @@ impl FreezeGovernance {
 }
 
 #[cfg(test)]
+#[allow(clippy::bool_assert_comparison)]
 mod tests {
     use super::*;
     use soroban_sdk::{
@@ -2958,8 +2959,7 @@ mod tests {
             &target,
             &String::from_str(&env, ""),
         );
-        let res = client.bump_proposal_ttl(&a1, &asset(&env), &target, &false, &1000);
-        assert_eq!(res, ());
+        client.bump_proposal_ttl(&a1, &asset(&env), &target, &false, &1000);
     }
 
     #[test]
@@ -3980,12 +3980,12 @@ mod tests {
         client.vote_freeze(&a1, &asset(&env), &issuer, &target);
 
         let events = env.events().all();
-        assert!(events.len() > 0);
+        assert!(!events.is_empty());
 
         let mut matched_topics = false;
         for i in 0..events.len() {
             let (contract_id, topics, _data) = events.get(i).unwrap();
-            if contract_id == cid && topics.len() > 0 {
+            if contract_id == cid && !topics.is_empty() {
                 matched_topics = true;
             }
         }
