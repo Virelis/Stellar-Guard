@@ -1,5 +1,10 @@
 import axios from "axios";
+import * as StellarSdk from "@stellar/stellar-sdk";
 import { logger } from "./logger";
+
+const SIMULATION_SOURCE_ACCOUNT = StellarSdk.Keypair.fromRawEd25519Seed(
+  Buffer.alloc(32, 0)
+).publicKey();
 
 const RPC_URL = process.env.SOROBAN_RPC_URL ?? "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = process.env.FREEZE_CONTRACT_ID ?? "";
@@ -22,6 +27,10 @@ function getFromCache<T>(key: string): T | null {
 
 function setInCache<T>(key: string, value: T, ttlMs = 5000): void {
   cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+}
+
+export function clearSorobanRpcCache(): void {
+  cache.clear();
 }
 
 export async function checkSorobanRpcHealth(): Promise<{
@@ -159,6 +168,62 @@ export async function isAccountFrozenOnChain(
     return null;
   } catch (err: any) {
     logger.debug(`[SorobanRPC] isAccountFrozenOnChain error: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * Query current active admin addresses via Soroban RPC simulateTransaction (`get_admins`).
+ * Returns `null` gracefully if the contract is unconfigured or RPC is unreachable.
+ */
+export async function getOnChainAdmins(): Promise<string[] | null> {
+  const activeContractId = process.env.FREEZE_CONTRACT_ID ?? CONTRACT_ID;
+  const activeRpcUrl = process.env.SOROBAN_RPC_URL ?? RPC_URL;
+  const activePassphrase = process.env.NETWORK_PASSPHRASE ?? NETWORK_PASSPHRASE;
+
+  if (!activeContractId) return null;
+
+  const cacheKey = `admins:${activeContractId}`;
+  const cached = getFromCache<string[]>(cacheKey);
+  if (cached !== null) return cached;
+
+  try {
+    const contract = new StellarSdk.Contract(activeContractId);
+    const dummyAccount = new StellarSdk.Account(SIMULATION_SOURCE_ACCOUNT, "0");
+
+    const tx = new StellarSdk.TransactionBuilder(dummyAccount, {
+      fee: "100",
+      networkPassphrase: activePassphrase,
+    })
+      .addOperation(contract.call("get_admins"))
+      .setTimeout(30)
+      .build();
+
+    const { data } = await axios.post(
+      activeRpcUrl,
+      {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "simulateTransaction",
+        params: { transaction: tx.toXDR() },
+      },
+      { timeout: 8000 }
+    );
+
+    if (data?.result?.results?.[0]?.xdr) {
+      const scVal = StellarSdk.xdr.ScVal.fromXDR(data.result.results[0].xdr, "base64");
+      const native = StellarSdk.scValToNative(scVal);
+      if (Array.isArray(native)) {
+        const admins = native
+          .map((entry) => (typeof entry === "string" ? entry : String(entry)))
+          .filter((addr) => addr.length > 0);
+        setInCache(cacheKey, admins);
+        return admins;
+      }
+    }
+    return null;
+  } catch (err: any) {
+    logger.debug(`[SorobanRPC] getOnChainAdmins simulation error: ${err.message}`);
     return null;
   }
 }

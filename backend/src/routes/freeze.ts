@@ -2,7 +2,11 @@ import { Router, Request, Response } from "express";
 import StellarSdk from "@stellar/stellar-sdk";
 import { recordVote, clearVotes, listProposals } from "../services/voteStore";
 import { recordAuditLog } from "../services/auditService";
-import { getOnChainVotes, isAccountFrozenOnChain } from "../services/sorobanRpc";
+import {
+  getOnChainAdmins,
+  getOnChainVotes,
+  isAccountFrozenOnChain,
+} from "../services/sorobanRpc";
 import { sendFreezeProposalNotification } from "../services/fcmService";
 
 export const freezeRouter = Router();
@@ -27,6 +31,22 @@ function isValidAssetCode(code: string): boolean {
 }
 
 const TTL_SECONDS = 7 * 24 * 60 * 60; // 7-day proposal TTL
+
+// GET /api/freeze/admins — active admin addresses via Soroban RPC simulation with graceful fallback
+freezeRouter.get("/admins", async (_req: Request, res: Response) => {
+  const onChainAdmins = await getOnChainAdmins();
+  if (onChainAdmins !== null) {
+    return res.json({ admins: onChainAdmins, source: "chain" });
+  }
+
+  const rawFallback = process.env.ADMIN_ADDRESSES ?? "";
+  const fallbackAdmins = rawFallback
+    .split(",")
+    .map((addr) => addr.trim())
+    .filter((addr) => addr.length > 0 && isValidAddress(addr));
+
+  return res.json({ admins: fallbackAdmins, source: "fallback" });
+});
 
 // GET /api/freeze/proposals — vote counts are read from chain when available
 freezeRouter.get("/proposals", async (_req: Request, res: Response) => {
