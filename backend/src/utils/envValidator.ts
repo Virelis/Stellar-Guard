@@ -4,6 +4,7 @@
  */
 
 import { StrKey } from "@stellar/stellar-sdk";
+import { parseAllowedOrigins } from "../middleware/cors";
 
 export interface EnvValidationReport {
   valid: boolean;
@@ -68,8 +69,12 @@ export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): EnvVa
   }
 
   // 6. Allowed Origin
-  const allowedOrigin = env.ALLOWED_ORIGIN || "http://localhost:3000";
-  checkedKeys["ALLOWED_ORIGIN"] = allowedOrigin;
+  try {
+    const origins = parseAllowedOrigins(env.ALLOWED_ORIGIN, env.NODE_ENV);
+    checkedKeys["ALLOWED_ORIGIN"] = origins.join(",");
+  } catch (err: any) {
+    errors.push(err.message || "Invalid ALLOWED_ORIGIN configuration");
+  }
 
   return {
     valid: errors.length === 0,
